@@ -22,8 +22,10 @@ from rackattack.tcp import publish
 from rackattack.tcp import transportserver
 from twisted.internet import reactor
 from twisted.web import server
+from twisted.python import log
 from rackattack.common import httprootresource
 import yaml
+import sys
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--requestPort", default=1014, type=int)
@@ -99,6 +101,7 @@ def createPostMortemPackForAllocationID(allocationID):
         return allocationsInstance.byIndex(int(allocationID)).createPostMortemPack()
 
 
+log.startLogging(sys.stderr)
 root = httprootresource.HTTPRootResource(
     serialLogFilename, createPostMortemPackForAllocationID,
     config.MANAGED_POST_MORTEM_PACKS_DIRECTORY)
