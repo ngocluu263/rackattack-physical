@@ -63,3 +63,6 @@ class Host:
         if self._sol is None:
             return
         self._sol.truncateSerialLog()
+
+    def reconfigureBIOS(self):
+        logging.warning("Implement me!")
