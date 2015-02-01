@@ -5,9 +5,10 @@ import logging
 
 
 class IPCServer(baseipcserver.BaseIPCServer):
-    def __init__(self, publicNATIP, osmosisServerIP, allocations, hosts):
+    def __init__(self, publicNATIP, osmosisServerIP, dnsmasq, allocations, hosts):
         self._publicNATIP = publicNATIP
         self._osmosisServerIP = osmosisServerIP
+        self._dnsmasq = dnsmasq
         self._allocations = allocations
         self._hosts = hosts
         baseipcserver.BaseIPCServer.__init__(self)
@@ -73,6 +74,17 @@ class IPCServer(baseipcserver.BaseIPCServer):
     def cmd_node__coldRestart(self, allocationID, nodeID, peer):
         stateMachine = self._findNode(allocationID, nodeID)
         logging.info("Cold restarting node %(node)s by allocator request", dict(node=nodeID))
+        stateMachine.hostImplementation().coldRestart()
+
+    def cmd_node__answerDHCP(self, allocationID, nodeID, shouldAnswer, peer):
+        stateMachine = self._findNode(allocationID, nodeID)
+        logging.info("Should answer DHCP: %(should)s node %(node)s", dict(node=nodeID, should=shouldAnswer))
+        if shouldAnswer:
+            self._dnsmasq.addIfNotAlready(
+                stateMachine.hostImplementation().primaryMACAddress(),
+                stateMachine.hostImplementation().ipAddress())
+        else:
+            self._dnsmasq.remove(stateMachine.hostImplementation().primaryMACAddress())
         stateMachine.hostImplementation().coldRestart()
 
     def cmd_admin__queryStatus(self, peer):

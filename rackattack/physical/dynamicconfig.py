@@ -99,6 +99,7 @@ class DynamicConfig:
             hostImplementation=hostInstance,
             inaugurate=self._inaugurate,
             tftpboot=self._tftpboot,
+            dnsmasq=self._dnsmasq,
             freshVMJustStarted=False)
         self._hosts.add(stateMachine)
         self._freePool.put(stateMachine)

@@ -87,6 +87,7 @@ dynamicConfig = dynamicconfig.DynamicConfig(
 ipcServer = ipcserver.IPCServer(
     publicNATIP=conf['PUBLIC_NAT_IP'],
     osmosisServerIP=conf['OSMOSIS_SERVER_IP'],
+    dnsmasq=dnsmasqInstance,
     allocations=allocationsInstance,
     hosts=hostsInstance)
 
