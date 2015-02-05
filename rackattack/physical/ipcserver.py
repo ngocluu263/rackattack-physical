@@ -85,7 +85,6 @@ class IPCServer(baseipcserver.BaseIPCServer):
                 stateMachine.hostImplementation().ipAddress())
         else:
             self._dnsmasq.remove(stateMachine.hostImplementation().primaryMACAddress())
-        stateMachine.hostImplementation().coldRestart()
 
     def cmd_admin__queryStatus(self, peer):
         allocations = [dict(
