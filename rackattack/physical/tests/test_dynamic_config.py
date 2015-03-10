@@ -17,6 +17,7 @@ from rackattack.physical import config
 import os
 from rackattack.common import hoststatemachine
 from rackattack.physical.ipmi import IPMI
+import yaml
 
 
 @patch('signal.signal')
@@ -48,8 +49,17 @@ class Test(unittest.TestCase):
                                                   freePool=self.freePoolMock,
                                                   allocations=self.allocationsMock)
 
+    def _validateOfflineHosts(self):
+        configuration = yaml.load(open(config.RACK_YAML, 'rb'))
+        expected_offline_hosts = set([host['id'] for host in
+                                      configuration['HOSTS'] if
+                                      host.get('offline', False)])
+        actual_offline_hosts = set(self.tested.getOfflineHosts().keys())
+        self.assertEqual(expected_offline_hosts, actual_offline_hosts)
+
     def test_addNewHostInOnlineStateDNSMasqAddHostCalled(self, *_args):
         self._init('online_rack_conf.yaml')
+        self._validateOfflineHosts()
         self.assertEquals(self.dnsMasqMock.add.call_count, 4)
         self.assertEquals(self.dnsMasqMock.add.call_args_list[0][0], ('00:1e:67:48:20:60', '192.168.1.11'))
         self.assertEquals(self.dnsMasqMock.add.call_args_list[1][0], ('00:1e:67:44:40:8e', '192.168.1.12'))
@@ -58,6 +68,7 @@ class Test(unittest.TestCase):
         self.dnsMasqMock.reset_mock()
         self._setRackConf('offline_rack_conf.yaml')
         self.tested._reload()
+        self._validateOfflineHosts()
         self.assertEquals(self.dnsMasqMock.add.call_count, 0)
         self.assertEquals(self.dnsMasqMock.remove.call_count, 1)
         self.assertEquals(self.dnsMasqMock.remove.call_args_list[0][0], ('00:1e:67:45:70:6d',))

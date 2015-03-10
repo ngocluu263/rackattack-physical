@@ -5,12 +5,13 @@ import logging
 
 
 class IPCServer(baseipcserver.BaseIPCServer):
-    def __init__(self, publicNATIP, osmosisServerIP, dnsmasq, allocations, hosts):
+    def __init__(self, publicNATIP, osmosisServerIP, dnsmasq, allocations, hosts, dynamicConfig):
         self._publicNATIP = publicNATIP
         self._osmosisServerIP = osmosisServerIP
         self._dnsmasq = dnsmasq
         self._allocations = allocations
         self._hosts = hosts
+        self._dynamicConfig = dynamicConfig
         baseipcserver.BaseIPCServer.__init__(self)
 
     def cmd_allocate(self, requirements, allocationInfo, peer):
@@ -94,6 +95,19 @@ class IPCServer(baseipcserver.BaseIPCServer):
             done=a.dead() or a.done(),
             dead=a.dead()
             ) for a in self._allocations.all()]
+        hosts = self._hostInAllStatesButOffline() + self._offlineHosts()
+        return dict(allocations=allocations, hosts=hosts)
+
+    def _offlineHosts(self):
+        return [dict(index=host.index(),
+                     id=host_id,
+                     primaryMACAddress=host.primaryMACAddress(),
+                     secondaryMACAddress=host.secondaryMACAddress(),
+                     ipAddress=host.ipAddress(),
+                     state="OFFLINE")
+                for host_id, host in self._dynamicConfig.getOfflineHosts()]
+
+    def _hostInAllStatesButOffline(self):
         STATE = {
             1: "QUICK_RECLAIMATION_IN_PROGRESS",
             2: "SLOW_RECLAIMATION_IN_PROGRESS",
@@ -101,12 +115,10 @@ class IPCServer(baseipcserver.BaseIPCServer):
             4: "INAUGURATION_LABEL_PROVIDED",
             5: "INAUGURATION_DONE",
             6: "DESTROYED"}
-        hosts = [dict(
-            index=s.hostImplementation().index(),
-            id=s.hostImplementation().id(),
-            primaryMACAddress=s.hostImplementation().primaryMACAddress(),
-            secondaryMACAddress=s.hostImplementation().secondaryMACAddress(),
-            ipAddress=s.hostImplementation().ipAddress(),
-            state=STATE[s.state()]
-            ) for s in self._hosts.all()]
-        return dict(allocations=allocations, hosts=hosts)
+        return [dict(index=s.hostImplementation().index(),
+                     id=s.hostImplementation().id(),
+                     primaryMACAddress=s.hostImplementation().primaryMACAddress(),
+                     secondaryMACAddress=s.hostImplementation().secondaryMACAddress(),
+                     ipAddress=s.hostImplementation().ipAddress(),
+                     state=STATE[s.state()])
+                for s in self._hosts.all()]

@@ -112,3 +112,6 @@ class DynamicConfig:
 
     def _availableIndex(self):
         return 1 + len(self._onlineHosts) + len(self._offlineHosts)
+
+    def getOfflineHosts(self):
+        return self._offlineHosts

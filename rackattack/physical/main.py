@@ -89,7 +89,8 @@ ipcServer = ipcserver.IPCServer(
     osmosisServerIP=conf['OSMOSIS_SERVER_IP'],
     dnsmasq=dnsmasqInstance,
     allocations=allocationsInstance,
-    hosts=hostsInstance)
+    hosts=hostsInstance,
+    dynamicConfig=dynamicConfig)
 
 
 def serialLogFilename(vmID):
