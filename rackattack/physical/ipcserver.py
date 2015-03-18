@@ -105,7 +105,7 @@ class IPCServer(baseipcserver.BaseIPCServer):
                      secondaryMACAddress=host.secondaryMACAddress(),
                      ipAddress=host.ipAddress(),
                      state="OFFLINE")
-                for host_id, host in self._dynamicConfig.getOfflineHosts()]
+                for host_id, host in self._dynamicConfig.getOfflineHosts().iteritems()]
 
     def _hostInAllStatesButOffline(self):
         STATE = {
