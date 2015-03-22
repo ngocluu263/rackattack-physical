@@ -3,6 +3,7 @@ from rackattack.physical import logconfig
 from rackattack.ssh import connection
 connection.discardParamikoLogs()
 connection.discardSSHDebugMessages()
+logging.getLogger("pika").setLevel(logging.INFO)
 import time
 import argparse
 from rackattack.physical import config
@@ -24,6 +25,7 @@ from twisted.internet import reactor
 from twisted.web import server
 from twisted.python import log
 from rackattack.common import httprootresource
+import inaugurator.server.config
 import yaml
 import sys
 
@@ -55,6 +57,7 @@ timer.TimersThread()
 tftpbootInstance = tftpboot.TFTPBoot(
     netmask=network.NETMASK,
     inauguratorServerIP=network.BOOTSERVER_IP_ADDRESS,
+    inauguratorServerPort=inaugurator.server.config.PORT,
     inauguratorGatewayIP=network.GATEWAY_IP_ADDRESS,
     osmosisServerIP=conf['OSMOSIS_SERVER_IP'],
     rootPassword=config.ROOT_PASSWORD,
@@ -69,9 +72,8 @@ dnsmasqInstance = dnsmasq.DNSMasq(
     lastIP=network.LAST_IP,
     gateway=network.GATEWAY_IP_ADDRESS,
     nameserver=network.BOOTSERVER_IP_ADDRESS)
-inaugurateInstance = inaugurate.Inaugurate(bindHostname=network.BOOTSERVER_IP_ADDRESS)
-publishFactory = publish.PublishFactory()
-publishInstance = publish.Publish(publishFactory)
+inaugurateInstance = inaugurate.Inaugurate(config.RABBIT_MQ_DIRECTORY)
+publishInstance = publish.Publish("ampq://localhost:%d/%%2F" % inaugurator.server.config.PORT)
 hostsInstance = hosts.Hosts()
 freePool = freepool.FreePool(hostsInstance)
 allocationsInstance = allocations.Allocations(
@@ -109,6 +111,5 @@ root = httprootresource.HTTPRootResource(
     config.MANAGED_POST_MORTEM_PACKS_DIRECTORY)
 reactor.listenTCP(args.httpPort, server.Site(root))
 reactor.listenTCP(args.requestPort, transportserver.TransportFactory(ipcServer.handle))
-reactor.listenTCP(args.subscribePort, publishFactory)
 logging.info("Physical RackAttack up and running")
 reactor.run()

@@ -18,6 +18,16 @@ class IPCServer(baseipcserver.BaseIPCServer):
         allocation = self._allocations.create(requirements, allocationInfo)
         return allocation.index()
 
+    def cmd_allocation__inauguratorsIDs(self, id, peer):
+        allocation = self._allocations.byIndex(id)
+        if allocation.dead():
+            raise Exception("Must not fetch nodes from a dead allocation")
+        result = {}
+        for name, stateMachine in allocation.allocated().iteritems():
+            host = stateMachine.hostImplementation()
+            result[name] = host.id()
+        return result
+
     def cmd_allocation__nodes(self, id, peer):
         allocation = self._allocations.byIndex(id)
         if allocation.dead():
