@@ -19,6 +19,7 @@ class Allocation:
         self._waiting = allocated
         self._inaugurated = dict()
         self._death = None
+        self._broadcastAllocationCreation()
         for name, stateMachine in self._waiting.iteritems():
             stateMachine.hostImplementation().truncateSerialLog()
             self._assign(name, stateMachine)
@@ -130,3 +131,7 @@ class Allocation:
             stateChangeCallback=lambda x: self._stateMachineChangedState(name, stateMachine),
             imageLabel=self._requirements[name]['imageLabel'],
             imageHint=self._requirements[name]['imageHint'])
+
+    def _broadcastAllocationCreation(self):
+        self._broadcaster.allocationCreated(allocationID=self._index, requirements=self._requirements,
+                                            allocationInfo=self._allocationInfo, allocated=self._waiting)

@@ -17,6 +17,7 @@ class Allocations:
     def create(self, requirements, allocationInfo):
         logging.info("Allocation requested: '%(requirements)s' '%(allocationInfo)s'", dict(
             requirements=requirements, allocationInfo=allocationInfo))
+        self._broadcaster.allocationRequested(requirements, allocationInfo)
         assert globallock.assertLocked()
         self._cleanup()
         self._verifyLabelsExistsInOsmosis([r['imageLabel'] for r in requirements.values()])
