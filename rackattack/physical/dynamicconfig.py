@@ -115,3 +115,6 @@ class DynamicConfig:
 
     def getOfflineHosts(self):
         return self._offlineHosts
+
+    def getOnlineHosts(self):
+        return self._onlineHosts

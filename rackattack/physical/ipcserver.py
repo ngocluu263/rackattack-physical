@@ -1,6 +1,7 @@
 from rackattack.tcp import heartbeat
 from rackattack.common import baseipcserver
 from rackattack.physical import network
+from rackattack.common.hoststatemachine import STATE_DESTROYED
 import logging
 
 
@@ -105,7 +106,7 @@ class IPCServer(baseipcserver.BaseIPCServer):
             done=a.dead() or a.done(),
             dead=a.dead()
             ) for a in self._allocations.all()]
-        hosts = self._hostInAllStatesButOffline() + self._offlineHosts()
+        hosts = self._onlineHosts() + self._offlineHosts()
         return dict(allocations=allocations, hosts=hosts)
 
     def _offlineHosts(self):
@@ -117,7 +118,7 @@ class IPCServer(baseipcserver.BaseIPCServer):
                      state="OFFLINE")
                 for host_id, host in self._dynamicConfig.getOfflineHosts().iteritems()]
 
-    def _hostInAllStatesButOffline(self):
+    def _onlineHosts(self):
         STATE = {
             1: "QUICK_RECLAIMATION_IN_PROGRESS",
             2: "SLOW_RECLAIMATION_IN_PROGRESS",
@@ -125,10 +126,12 @@ class IPCServer(baseipcserver.BaseIPCServer):
             4: "INAUGURATION_LABEL_PROVIDED",
             5: "INAUGURATION_DONE",
             6: "DESTROYED"}
-        return [dict(index=s.hostImplementation().index(),
-                     id=s.hostImplementation().id(),
-                     primaryMACAddress=s.hostImplementation().primaryMACAddress(),
-                     secondaryMACAddress=s.hostImplementation().secondaryMACAddress(),
-                     ipAddress=s.hostImplementation().ipAddress(),
-                     state=STATE[s.state()])
-                for s in self._hosts.all()]
+        statesOfHostsThatHaveMachines = dict([(machine.hostImplementation().id(), machine.state())
+                                             for machine in self._hosts.all()])
+        return [dict(index=host.index(),
+                     id=hostID,
+                     primaryMACAddress=host.primaryMACAddress(),
+                     secondaryMACAddress=host.secondaryMACAddress(),
+                     ipAddress=host.ipAddress(),
+                     state=statesOfHostsThatHaveMachines.get(hostID, STATE[STATE_DESTROYED]))
+                for hostID, host in self._dynamicConfig.getOnlineHosts().iteritems()]
