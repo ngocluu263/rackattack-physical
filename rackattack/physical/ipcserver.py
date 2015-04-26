@@ -133,5 +133,5 @@ class IPCServer(baseipcserver.BaseIPCServer):
                      primaryMACAddress=host.primaryMACAddress(),
                      secondaryMACAddress=host.secondaryMACAddress(),
                      ipAddress=host.ipAddress(),
-                     state=statesOfHostsThatHaveMachines.get(hostID, STATE[STATE_DESTROYED]))
+                     state=STATE[statesOfHostsThatHaveMachines.get(hostID, STATE_DESTROYED)])
                 for hostID, host in self._dynamicConfig.getOnlineHosts().iteritems()]
