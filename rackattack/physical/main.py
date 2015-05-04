@@ -1,3 +1,7 @@
+import sys
+import os
+if 'PIKA_EGG_PATH' in os.environ:
+    sys.path.insert(0, os.environ['PIKA_EGG_PATH'])
 import logging
 from rackattack.physical import logconfig
 from rackattack.ssh import connection
@@ -27,7 +31,6 @@ from twisted.python import log
 from rackattack.common import httprootresource
 import inaugurator.server.config
 import yaml
-import sys
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--requestPort", default=1014, type=int)

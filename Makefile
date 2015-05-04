@@ -20,7 +20,11 @@ build/rackattack.physical.egg: rackattack/physical/main.py
 	python -m upseto.packegg --entryPoint=$< --output=$@ --createDeps=$@.dep --compile_pyc --joinPythonNamespaces
 -include build/rackattack.physical.egg.dep
 
-install: build/rackattack.physical.egg
+install_pika:
+	-sudo mkdir /usr/share/rackattack.physical
+	sudo cp pika-stable/pika-git-ref-6226dc0.egg /usr/share/rackattack.physical
+
+install: install_pika build/rackattack.physical.egg
 	-sudo systemctl stop rackattack-physical.service
 	-sudo mkdir /usr/share/rackattack.physical
 	sudo cp build/rackattack.physical.egg /usr/share/rackattack.physical
@@ -34,5 +38,4 @@ uninstall:
 	-sudo rm -fr /usr/lib/systemd/system/rackattack-physical.service
 	sudo rm -fr /usr/share/rackattack.physical
 
-prepareForCleanBuild:
-	sudo pip install pika
+prepareForCleanBuild: install_pika
