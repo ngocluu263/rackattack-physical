@@ -1,4 +1,4 @@
 requirements:
-- hash: ccc7d83b8affae5647985a23c0f7fce631884e0a
-  originURL: https://github.com/Stratoscale/rootfs-build.git
+- hash: ed30c115eb7218d33333111703ac978032e9ae98
+  originURL: https://github.com/Stratoscale/rootfs-centos7-build.git
 
