@@ -33,3 +33,6 @@ uninstall:
 	-sudo systemctl disable rackattack-physical.service
 	-sudo rm -fr /usr/lib/systemd/system/rackattack-physical.service
 	sudo rm -fr /usr/share/rackattack.physical
+
+prepareForCleanBuild:
+	sudo pip install pika
