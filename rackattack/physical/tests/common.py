@@ -4,9 +4,13 @@ from rackattack import api
 class HostStateMachine:
     def __init__(self, name):
         self.name = name
+        self.destroyCallback = None
 
     def hostImplementation(self):
         return Host(self.name)
+
+    def setDestroyCallback(self, callback):
+        self.destroyCallback = callback
 
 
 class Host:
@@ -15,6 +19,17 @@ class Host:
 
     def fulfillsRequirement(self, requirement):
         return True
+
+
+class Hosts:
+    def __init__(self):
+        self._stateMachines = []
+
+    def destroy(self, stateMachine):
+        self._stateMachines.remove(stateMachine)
+    
+    def add(self, stateMachine):
+        self._stateMachines.append(stateMachine)
 
 
 class FreePool:
