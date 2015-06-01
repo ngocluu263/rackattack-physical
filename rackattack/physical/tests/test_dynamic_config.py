@@ -49,17 +49,43 @@ class Test(unittest.TestCase):
                                                   freePool=self.freePoolMock,
                                                   allocations=self.allocationsMock)
 
+    def _validateOnlineHosts(self):
+        configuration = yaml.load(open(config.RACK_YAML, 'rb'))
+        expectedOnlineHosts = set([host['id'] for host in configuration['HOSTS'] if
+                                   not host.get('offline', False)])
+        actualOnineHosts = set(self.tested.getOnlineHosts().keys())
+        self.assertEqual(expectedOnlineHosts, actualOnineHosts)
+
+    def test_onlineHosts(self, *_args):
+        self._init('online_rack_conf.yaml')
+        self._validateOnlineHosts()
+        self._init('offline_rack_conf.yaml')
+        self._validateOnlineHosts()
+
     def _validateOfflineHosts(self):
         configuration = yaml.load(open(config.RACK_YAML, 'rb'))
-        expected_offline_hosts = set([host['id'] for host in
-                                      configuration['HOSTS'] if
+        expectedOfflineHosts = set([host['id'] for host in configuration['HOSTS'] if
                                       host.get('offline', False)])
-        actual_offline_hosts = set(self.tested.getOfflineHosts().keys())
-        self.assertEqual(expected_offline_hosts, actual_offline_hosts)
+        actualOfflineHosts = set(self.tested.getOfflineHosts().keys())
+        self.assertEqual(expectedOfflineHosts, actualOfflineHosts)
+
+    def test_offlineHosts(self, *_args):
+        self._init('online_rack_conf.yaml')
+        self._validateOfflineHosts()
+        self._init('offline_rack_conf.yaml')
+        self._validateOfflineHosts()
+
+    def test_reload(self, *args):
+        self._init('online_rack_conf.yaml')
+        self._validateOfflineHosts()
+        self._validateOnlineHosts()
+        self._setRackConf('offline_rack_conf.yaml')
+        self.tested._reload()
+        self._validateOfflineHosts()
+        self._validateOnlineHosts()
 
     def test_addNewHostInOnlineStateDNSMasqAddHostCalled(self, *_args):
         self._init('online_rack_conf.yaml')
-        self._validateOfflineHosts()
         self.assertEquals(self.dnsMasqMock.add.call_count, 4)
         self.assertEquals(self.dnsMasqMock.add.call_args_list[0][0], ('00:1e:67:48:20:60', '192.168.1.11'))
         self.assertEquals(self.dnsMasqMock.add.call_args_list[1][0], ('00:1e:67:44:40:8e', '192.168.1.12'))
@@ -68,7 +94,6 @@ class Test(unittest.TestCase):
         self.dnsMasqMock.reset_mock()
         self._setRackConf('offline_rack_conf.yaml')
         self.tested._reload()
-        self._validateOfflineHosts()
         self.assertEquals(self.dnsMasqMock.add.call_count, 0)
         self.assertEquals(self.dnsMasqMock.remove.call_count, 1)
         self.assertEquals(self.dnsMasqMock.remove.call_args_list[0][0], ('00:1e:67:45:70:6d',))
