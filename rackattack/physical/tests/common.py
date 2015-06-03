@@ -2,16 +2,18 @@ from rackattack import api
 
 
 class HostStateMachine:
-    def __init__(self, name):
-        self.name = name
+    def __init__(self, hostImplementation, *args, **kwargs):
+        self._hostImplementation = hostImplementation
         self.destroyCallback = None
 
     def hostImplementation(self):
-        return Host(self.name)
+        return self._hostImplementation
 
     def setDestroyCallback(self, callback):
         self.destroyCallback = callback
 
+    def destroy(self):
+        pass
 
 class Host:
     def __init__(self, name):
@@ -33,15 +35,23 @@ class Hosts:
 
 
 class FreePool:
-    def __init__(self):
-        self.pool = []
+    def __init__(self, hosts=None):
+        self._pool = []
+        self._hosts = hosts
 
     def all(self):
-        return self.pool
+        return self._pool
 
     def takeOut(self, stateMachine):
-        self.pool.remove(stateMachine)
+        self._pool.remove(stateMachine)
 
+    def put(self, hostStateMachine):
+        self._pool.append(hostStateMachine)
+        hostStateMachine.setDestroyCallback(self._hostSelfDestructed)
+
+    def _hostSelfDestructed(self, hostStateMachine):
+        self._hosts.destroy(hostStateMachine)
+        self._pool.remove(hostStateMachine)
 
 class Allocation:
     def __init__(self, freePool, nice):
@@ -50,7 +60,7 @@ class Allocation:
         self.allocatedHosts = []
 
     def withdraw(self, ignoredMessage):
-        self.freePool.pool += self.allocatedHosts
+        self.freePool._pool += self.allocatedHosts
         self.allocatedHosts = None
 
     def allocated(self):
@@ -60,4 +70,9 @@ class Allocation:
         return self._allocationInfo
 
 
+class Allocations:
+    def __init__(self, **kwargs):
+        self.allocations = []
 
+    def all(self):
+        return self.allocations
