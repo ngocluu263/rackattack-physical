@@ -108,9 +108,14 @@ class Allocation:
                     stateMachine.hostImplementation().ipAddress()))
             logging.info("Host %(id)s inaugurated successfully", dict(
                 id=stateMachine.hostImplementation().id()))
-            assert name in self._waiting
-            del self._waiting[name]
-            self._inaugurated[name] = stateMachine
+            if name in self._waiting:
+                del self._waiting[name]
+                self._inaugurated[name] = stateMachine
+            else:
+                logging.warn('Got an unexpected inauguration-done msg for name: %(name)s hostID=%(hostID)s.'
+                             'waiting: %(waiting)s, inaugurated: %(inaugurated)s',
+                             dict(name=name, waiting=self._waiting, inaugurated=self._inaugurated,
+                                  hostID=stateMachine.hostImplementation().id()))
             if self.done():
                 self._broadcaster.allocationChangedState(self._index)
 
