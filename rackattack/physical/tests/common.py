@@ -15,6 +15,7 @@ class HostStateMachine:
     def destroy(self):
         pass
 
+
 class Host:
     def __init__(self, name):
         self.name = name
@@ -29,7 +30,7 @@ class Hosts:
 
     def destroy(self, stateMachine):
         self._stateMachines.remove(stateMachine)
-    
+
     def add(self, stateMachine):
         self._stateMachines.append(stateMachine)
 
@@ -52,6 +53,7 @@ class FreePool:
     def _hostSelfDestructed(self, hostStateMachine):
         self._hosts.destroy(hostStateMachine)
         self._pool.remove(hostStateMachine)
+
 
 class Allocation:
     def __init__(self, freePool, nice):

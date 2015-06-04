@@ -90,7 +90,7 @@ class Test(unittest.TestCase):
     def _validateOfflineHosts(self):
         configuration = yaml.load(open(config.RACK_YAML, 'rb'))
         expectedOfflineHosts = set([host['id'] for host in configuration['HOSTS'] if
-                                      host.get('offline', False)])
+                                    host.get('offline', False)])
         actualOfflineHosts = set(self.tested.getOfflineHosts().keys())
         self.assertEqual(expectedOfflineHosts, actualOfflineHosts)
 
@@ -110,11 +110,11 @@ class Test(unittest.TestCase):
 
     def test_takeDestroyedHostOffline(self, *_args):
         self._init('online_rack_conf.yaml')
-        stateMachine = [stateMachine for stateMachine in self._hosts.all() if \
+        stateMachine = [stateMachine for stateMachine in self._hosts.all() if
                         stateMachine.hostImplementation().id() == self.HOST_THAT_WILL_BE_TAKEN_OFFLINE][0]
         self._hosts.destroy(stateMachine)
         self._setRackConf('offline_rack_conf.yaml')
         self.tested._reload()
-        
+
 if __name__ == '__main__':
     unittest.main()

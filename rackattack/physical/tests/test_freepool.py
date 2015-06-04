@@ -17,16 +17,16 @@ class Test(unittest.TestCase):
     def test_OneHost(self):
         host = HostStateMachine('host1')
         self.tested.put(host)
-        self.assertIn(host, self.tested.all()) 
+        self.assertIn(host, self.tested.all())
         self.tested.takeOut(host)
-        self.assertNotIn(host, self.tested.all()) 
+        self.assertNotIn(host, self.tested.all())
 
     def test_DestroyCallback(self):
         host = HostStateMachine('host1')
         self._hosts.add(host)
         self.tested.put(host)
         host.destroyCallback(host)
-        self.assertNotIn(host, self.tested.all()) 
+        self.assertNotIn(host, self.tested.all())
 
     def test_Listeners(self):
         listener = mock.Mock()
@@ -40,7 +40,7 @@ class Test(unittest.TestCase):
         self.tested.unregisterPutListener(listener)
         self.tested.put(host)
         self.assertEquals(listener.call_count, 1)
-        
+
     def test_All(self):
         hosts = [HostStateMachine(str(i)) for i in xrange(10)]
         for host in hosts:
