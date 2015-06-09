@@ -89,7 +89,7 @@ class Allocation:
 
     def _die(self, reason):
         assert not self.dead()
-        logging.info("Allocation dies of '%(reason)s'", dict(reason=reason))
+        logging.info("Allocation %(idx)s dies of '%(reason)s'", dict(idx=self._index, reason=reason))
         for stateMachine in list(self._waiting.values()) + list(self._inaugurated.values()):
             stateMachine.unassign()
             stateMachine.setDestroyCallback(None)
@@ -98,6 +98,7 @@ class Allocation:
         self._death = dict(when=time.time(), reason=reason)
         timer.cancelAllByTag(tag=self)
         self._broadcaster.allocationChangedState(self._index)
+        logging.info("Allocation %(idx)s died.", dict(idx=self._index))
 
     def _stateMachineChangedState(self, name, stateMachine):
         if stateMachine.state() == hoststatemachine.STATE_INAUGURATION_DONE:
