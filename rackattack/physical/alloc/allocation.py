@@ -121,14 +121,19 @@ class Allocation:
                 self._broadcaster.allocationChangedState(self._index)
 
     def _stateMachineSelfDestructed(self, stateMachine):
-        for k, v in self._waiting.iteritems():
-            if v is stateMachine:
-                del self._waiting[k]
-                break
-        for k, v in self._inaugurated.iteritems():
-            if v is stateMachine:
-                del self._inaugurated[k]
-                break
+        if self._inaugurated is None:
+            logging.error('State machine self destructed more than once - %(id)s', dict(
+                          id=stateMachine.hostImplementation().id()))
+            return
+        else:
+            for k, v in self._waiting.iteritems():
+                if v is stateMachine:
+                    del self._waiting[k]
+                    break
+            for k, v in self._inaugurated.iteritems():
+                if v is stateMachine:
+                    del self._inaugurated[k]
+                    break
         self._die("Unable to inaugurate Host %s" % stateMachine.hostImplementation().id())
 
     def _assign(self, name, stateMachine):
