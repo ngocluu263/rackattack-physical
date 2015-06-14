@@ -1,10 +1,12 @@
 from rackattack import api
+from rackattack.common import hoststatemachine
 
 
 class HostStateMachine:
     def __init__(self, hostImplementation, *args, **kwargs):
         self._hostImplementation = hostImplementation
         self.destroyCallback = None
+        self._state = hoststatemachine.STATE_CHECKED_IN
 
     def hostImplementation(self):
         return self._hostImplementation
@@ -13,7 +15,10 @@ class HostStateMachine:
         self.destroyCallback = callback
 
     def destroy(self):
-        pass
+        self._state = hoststatemachine.STATE_DESTROYED
+
+    def state(self):
+        return self._state
 
 
 class Host:

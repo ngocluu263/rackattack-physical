@@ -37,13 +37,17 @@ class DynamicConfig:
         self._dnsmasq.remove(hostData['primaryMAC'])
         hostInstance.turnOff()
         stateMachine = self._findStateMachine(hostInstance)
-        if stateMachine is not None:
+        if stateMachine is None:
+            logging.info("'%(id)s' which is taken offline is already destroyed.", dict(id=hostData['id']))
+        else:
             for allocation in self._allocations.all():
                 if stateMachine in allocation.allocated().values():
                     allocation.withdraw("node taken offline")
             assert stateMachine in self._freePool.all()
             self._freePool.takeOut(stateMachine)
             self._hosts.destroy(stateMachine)
+            logging.info("Destroying state machine of host %(id)s", dict(id=hostData['id']))
+            stateMachine.destroy()
 
     def _broughtOnLineHost(self, hostData):
         return hostData['id'] in self._offlineHosts and not hostData.get('offline', False)

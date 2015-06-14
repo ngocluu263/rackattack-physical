@@ -28,7 +28,8 @@ class Allocations:
         try:
             alloc = allocation.Allocation(
                 index=self._index, requirements=requirements, allocationInfo=allocationInfo,
-                allocated=allocated, broadcaster=self._broadcaster, freePool=self._freePool)
+                allocated=allocated, broadcaster=self._broadcaster, freePool=self._freePool,
+                hosts=self._hosts)
         except:
             logging.error("Creating allocation fails, freeing up all allocated hosts")
             for allocated in allocated.values():

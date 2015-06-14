@@ -10,12 +10,13 @@ class Allocation:
     _HEARTBEAT_TIMEOUT = 15
     _LIMBO_AFTER_DEATH_DURATION = 60
 
-    def __init__(self, index, requirements, allocationInfo, allocated, broadcaster, freePool):
+    def __init__(self, index, requirements, allocationInfo, allocated, broadcaster, freePool, hosts):
         self._index = index
         self._requirements = requirements
         self._allocationInfo = allocationInfo
         self._broadcaster = broadcaster
         self._freePool = freePool
+        self._hosts = hosts
         self._waiting = allocated
         self._inaugurated = dict()
         self._death = None
@@ -135,6 +136,7 @@ class Allocation:
                     del self._inaugurated[k]
                     break
         self._die("Unable to inaugurate Host %s" % stateMachine.hostImplementation().id())
+        self._hosts.destroy(stateMachine)
 
     def _assign(self, name, stateMachine):
         stateMachine.setDestroyCallback(self._stateMachineSelfDestructed)
