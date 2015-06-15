@@ -116,6 +116,19 @@ class Test(unittest.TestCase):
         self.assertEquals(self.dnsMasqMock.remove.call_count, 1)
         self.assertEquals(self.dnsMasqMock.remove.call_args_list[0][0], ('00:1e:67:45:70:6d',))
 
+    def test_BringHostsOnlineFailedSinceDNSMasqAddFailed(self, *_args):
+        self._init('offline_rack_conf.yaml')
+        self._validateOnlineHosts()
+        self._validateOfflineHosts()
+        self._validateOnlineHostsAreInHostsPool()
+        self._setRackConf('online_rack_conf.yaml')
+        self.dnsMasqMock.add.side_effect = AssertionError('Ignore this error')
+        self.tested._reload()
+        self._setRackConf('offline_rack_conf.yaml')
+        self._validateOnlineHosts()
+        self._validateOfflineHosts()
+        self._validateOnlineHostsAreInHostsPool()
+
     def _validateOnlineHostsAreInHostsPool(self, exceptForIDs=[]):
         actualIDs = [host.hostImplementation().id() for host in self._hosts.all()]
         expectedIDs = [host for host in self._hostsInConfiguration(offline=False)

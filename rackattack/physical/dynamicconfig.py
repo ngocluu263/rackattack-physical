@@ -55,9 +55,15 @@ class DynamicConfig:
     def _bringHostOnline(self, hostData):
         hostInstance = self._offlineHosts[hostData['id']]
         assert hostInstance.id() == hostData['id']
+        try:
+            self._dnsmasq.add(hostData['primaryMAC'], hostInstance.ipAddress())
+        except AssertionError:
+            logging.exception("Failed adding host %(id)s to DNSMasq's list. Perhaps you're waiting for an "
+                              "earlier update that hasn't occurred yet? In that case, try adding the host "
+                              "again in a few seconds.", dict(id=hostData['id']))
+            return
         del self._offlineHosts[hostInstance.id()]
         self._onlineHosts[hostInstance.id()] = hostInstance
-        self._dnsmasq.add(hostData['primaryMAC'], hostInstance.ipAddress())
         self._startUsingHost(hostInstance)
 
     def _registeredHost(self, hostData):
