@@ -67,6 +67,9 @@ class Allocation:
         self.allocatedHosts = []
         self.isDead = None
 
+    def index(self):
+        return 1
+
     def withdraw(self, ignoredMessage):
         assert not self.dead()
         self.freePool._pool += self.allocatedHosts

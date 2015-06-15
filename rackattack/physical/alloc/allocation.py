@@ -92,6 +92,10 @@ class Allocation:
         assert not self.dead()
         logging.info("Allocation %(idx)s dies of '%(reason)s'", dict(idx=self._index, reason=reason))
         for stateMachine in list(self._waiting.values()) + list(self._inaugurated.values()):
+            if stateMachine.state() == hoststatemachine.STATE_DESTROYED:
+                logging.info("State machine %(id)s was destroyed during the allocation's lifetime",
+                             dict(id=stateMachine.hostImplementation().id()))
+                continue
             stateMachine.unassign()
             stateMachine.setDestroyCallback(None)
             self._freePool.put(stateMachine)
@@ -122,19 +126,10 @@ class Allocation:
                 self._broadcaster.allocationChangedState(self._index)
 
     def _stateMachineSelfDestructed(self, stateMachine):
-        if self._inaugurated is None:
-            logging.error('State machine self destructed more than once - %(id)s', dict(
-                          id=stateMachine.hostImplementation().id()))
+        if self.dead() is not None:
+            logging.warn('State machine %(id)s self destructed while allocation %(index)s is dead.', dict(
+                         id=stateMachine.hostImplementation().id(), index=self._index))
             return
-        else:
-            for k, v in self._waiting.iteritems():
-                if v is stateMachine:
-                    del self._waiting[k]
-                    break
-            for k, v in self._inaugurated.iteritems():
-                if v is stateMachine:
-                    del self._inaugurated[k]
-                    break
         self._die("Unable to inaugurate Host %s" % stateMachine.hostImplementation().id())
         self._hosts.destroy(stateMachine)
 

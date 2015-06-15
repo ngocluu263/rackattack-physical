@@ -40,14 +40,16 @@ class DynamicConfig:
         if stateMachine is None:
             logging.info("'%(id)s' which is taken offline is already destroyed.", dict(id=hostData['id']))
         else:
-            for allocation in self._allocations.all():
-                if allocation.dead() is None and stateMachine in allocation.allocated().values():
-                    allocation.withdraw("node taken offline")
-            assert stateMachine in self._freePool.all()
-            self._freePool.takeOut(stateMachine)
-            self._hosts.destroy(stateMachine)
             logging.info("Destroying state machine of host %(id)s", dict(id=hostData['id']))
             stateMachine.destroy()
+            for allocation in self._allocations.all():
+                if allocation.dead() is None and stateMachine in allocation.allocated().values():
+                    logging.error("Allocation %(id)s is not dead although its node was killed",
+                                  dict(id=allocation.index()))
+                    allocation.withdraw("node %(id)s taken offline" % dict(id=hostData['id']))
+            if stateMachine in self._hosts.all():
+                logging.error("State machine was not removed from hosts pool")
+                self._hosts.destroy(stateMachine)
 
     def _broughtOnLineHost(self, hostData):
         return hostData['id'] in self._offlineHosts and not hostData.get('offline', False)

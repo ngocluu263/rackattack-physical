@@ -103,7 +103,6 @@ class Test(unittest.TestCase):
         self._validateOfflineHosts()
         self._validateOnlineHostsAreInHostsPool()
 
-
     def test_BringHostOfflineAfterDestroyed(self, *_args):
         self._init('online_rack_conf.yaml')
         self._validateOnlineHostsAreInHostsPool()
