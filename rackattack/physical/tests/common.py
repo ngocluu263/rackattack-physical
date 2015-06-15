@@ -65,10 +65,16 @@ class Allocation:
         self._allocationInfo = api.AllocationInfo(user='test', purpose='user', nice=nice).__dict__
         self.freePool = freePool
         self.allocatedHosts = []
+        self.isDead = None
 
     def withdraw(self, ignoredMessage):
+        assert not self.dead()
         self.freePool._pool += self.allocatedHosts
-        self.allocatedHosts = None
+        self.allocatedHosts = []
+        self.isDead = ignoredMessage
+
+    def dead(self):
+        return self.isDead
 
     def allocated(self):
         return {str(x): x for x in self.allocatedHosts}

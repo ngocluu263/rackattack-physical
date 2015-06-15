@@ -88,6 +88,22 @@ class Test(unittest.TestCase):
         self._validateOfflineHosts()
         self._validateOnlineHostsAreInHostsPool()
 
+    def test_BringHostOfflineWhileAllocatedAndAllocationIsDead(self, *_args):
+        self._init('online_rack_conf.yaml')
+        allocation = Allocation(self.freePoolMock, nice=0)
+        allocation.withdraw("Made up reason")
+        stateMachine = [stateMachine for stateMachine in self._hosts.all() if
+                        stateMachine.hostImplementation().id() == self.HOST_THAT_WILL_BE_TAKEN_OFFLINE][0]
+        allocation.allocatedHosts.append(stateMachine)
+        self.allocationsMock.allocations.append(allocation)
+        self._validateOnlineHostsAreInHostsPool()
+        self._setRackConf('offline_rack_conf.yaml')
+        self.tested._reload()
+        self._validateOnlineHosts()
+        self._validateOfflineHosts()
+        self._validateOnlineHostsAreInHostsPool()
+
+
     def test_BringHostOfflineAfterDestroyed(self, *_args):
         self._init('online_rack_conf.yaml')
         self._validateOnlineHostsAreInHostsPool()

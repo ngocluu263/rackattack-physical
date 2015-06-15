@@ -43,7 +43,7 @@ class Test(unittest.TestCase):
         self.assertEquals(len(self.tested.allocated()), 1)
         self.assertIs(self.tested.allocated()['yuvu'], stateMachine)
         self.assertEquals(len(self.freePool._pool), 0)
-        self.assertIs(self.allocations[0].allocatedHosts, None)
+        self.assertEquals(self.allocations[0].allocatedHosts, [])
 
     def test_DoesNotTakeMachinesFromHigherPriority(self):
         self.allocations.append(Allocation(self.freePool, 0.1))

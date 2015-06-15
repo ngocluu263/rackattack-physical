@@ -41,7 +41,7 @@ class DynamicConfig:
             logging.info("'%(id)s' which is taken offline is already destroyed.", dict(id=hostData['id']))
         else:
             for allocation in self._allocations.all():
-                if stateMachine in allocation.allocated().values():
+                if allocation.dead() is None and stateMachine in allocation.allocated().values():
                     allocation.withdraw("node taken offline")
             assert stateMachine in self._freePool.all()
             self._freePool.takeOut(stateMachine)
