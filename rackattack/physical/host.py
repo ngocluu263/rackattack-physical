@@ -16,6 +16,7 @@ class Host:
         self._ipmiLogin = ipmiLogin
         self._ipmi = ipmi.IPMI(**ipmiLogin)
         self._sol = None
+        self._solFilename = None
 
     def index(self):
         return self._index
@@ -40,6 +41,7 @@ class Host:
         self._ipmi.powerCycle()
         if self._sol is None:
             self._sol = serialoverlan.SerialOverLan(hostID=self._id, **self._ipmiLogin)
+            self._solFilename = self._sol.serialLogFilename()
 
     def turnOff(self):
         logging.info("Turning off host %(id)s", dict(id=self._id))
@@ -55,9 +57,10 @@ class Host:
         return True
 
     def serialLogFilename(self):
-        if self._sol is None:
-            raise Exception("SOL stopped")
-        return self._sol.serialLogFilename()
+        if self._solFilename is None:
+            logging.error("SOL filename requested for host %(id)s with no SOL")
+            raise Exception("SOL hasn't started")
+        return self._solFilename
 
     def truncateSerialLog(self):
         if self._sol is None:
