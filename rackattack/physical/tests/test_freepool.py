@@ -25,7 +25,7 @@ class Test(unittest.TestCase):
         host = HostStateMachine('host1')
         self._hosts.add(host)
         self.tested.put(host)
-        host.destroyCallback(host)
+        host._destroyCallback(host)
         self.assertNotIn(host, self.tested.all())
 
     def test_Listeners(self):

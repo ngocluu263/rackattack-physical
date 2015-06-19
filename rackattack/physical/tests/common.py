@@ -5,29 +5,59 @@ from rackattack.common import hoststatemachine
 class HostStateMachine:
     def __init__(self, hostImplementation, *args, **kwargs):
         self._hostImplementation = hostImplementation
-        self.destroyCallback = None
+        self._destroyCallback = None
         self._state = hoststatemachine.STATE_CHECKED_IN
+        self._stateChangeCallback = None
+        self._imageLabel = None
+        self._imageHint = None
 
     def hostImplementation(self):
         return self._hostImplementation
 
     def setDestroyCallback(self, callback):
-        self.destroyCallback = callback
+        self._destroyCallback = callback
 
-    def destroy(self):
+    def destroy(self, forgetCallback=False):
         self._state = hoststatemachine.STATE_DESTROYED
+        if not forgetCallback:
+            self._destroyCallback(self)
+
+    def isDestroyed(self):
+        return self._state == hoststatemachine.STATE_DESTROYED
 
     def state(self):
         return self._state
 
+    def assign(self, stateChangeCallback, imageLabel, imageHint):
+        self._stateChangeCallback = stateChangeCallback
+        self._imageLabel = imageLabel
+        self._imageHint = imageHint
+
+    def unassign(self):
+        self._stateChangeCallback = None
+
+    def isAssigned(self):
+        return self._stateChangeCallback is not None
+
+    def fakeInaugurationDone(self):
+        self._state = hoststatemachine.STATE_INAUGURATION_DONE
+        self._stateChangeCallback(self)
 
 class Host:
-    def __init__(self, name):
-        self.name = name
+    def __init__(self, id):
+        self._id = id
+
+    def id(self):
+        return self._id
+
+    def ipAddress(self):
+        return "%(id)s's ip address" % dict(id=self.id())
 
     def fulfillsRequirement(self, requirement):
         return True
 
+    def truncateSerialLog(self):
+        pass
 
 class Hosts:
     def __init__(self):

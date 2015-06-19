@@ -93,7 +93,8 @@ class Allocation:
         logging.info("Allocation %(idx)s dies of '%(reason)s'", dict(idx=self._index, reason=reason))
         for stateMachine in list(self._waiting.values()) + list(self._inaugurated.values()):
             if stateMachine.state() == hoststatemachine.STATE_DESTROYED:
-                logging.info("State machine %(id)s was destroyed during the allocation's lifetime",
+                logging.error("State machine %(id)s was destroyed during the allocation's lifetime and it "
+                              "did not cause the allocation to die.",
                              dict(id=stateMachine.hostImplementation().id()))
                 continue
             stateMachine.unassign()
