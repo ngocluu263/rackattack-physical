@@ -3,10 +3,9 @@ all: unittest build check_convention
 clean:
 	sudo rm -fr build
 
-UNITTESTS=$(shell find rackattack -name 'test_*.py' | sed 's@/@.@g' | sed 's/\(.*\)\.py/\1/' | sort)
 COVERED_FILES=rackattack/physical/alloc/priority.py,rackattack/physical/dynamicconfig.py,rackattack/physical/alloc/freepool.py
 unittest:
-	UPSETO_JOIN_PYTHON_NAMESPACES=Yes PYTHONPATH=. python -m coverage run -m unittest $(UNITTESTS)
+	UPSETO_JOIN_PYTHON_NAMESPACES=Yes PYTHONPATH=. python -m coverage run -m rackattack.physical.tests.runner
 	python -m coverage report --show-missing --rcfile=coverage.config --fail-under=86 --include=$(COVERED_FILES)
 
 check_convention:
