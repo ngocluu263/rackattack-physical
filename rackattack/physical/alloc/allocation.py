@@ -95,7 +95,7 @@ class Allocation:
             if stateMachine.state() == hoststatemachine.STATE_DESTROYED:
                 logging.error("State machine %(id)s was destroyed during the allocation's lifetime and it "
                               "did not cause the allocation to die.",
-                             dict(id=stateMachine.hostImplementation().id()))
+                              dict(id=stateMachine.hostImplementation().id()))
                 continue
             stateMachine.unassign()
             stateMachine.setDestroyCallback(None)

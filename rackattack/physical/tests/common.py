@@ -43,6 +43,7 @@ class HostStateMachine:
         self._state = hoststatemachine.STATE_INAUGURATION_DONE
         self._stateChangeCallback(self)
 
+
 class Host:
     def __init__(self, id):
         self._id = id
@@ -58,6 +59,7 @@ class Host:
 
     def truncateSerialLog(self):
         pass
+
 
 class Hosts:
     def __init__(self):

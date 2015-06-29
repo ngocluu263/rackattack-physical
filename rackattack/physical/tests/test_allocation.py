@@ -13,7 +13,6 @@ from rackattack.physical.tests.common import HostStateMachine, Host, Hosts
 
 class Test(unittest.TestCase):
     def setUp(self):
-#       print 'Acuiqring globallock...'
         globallock._lock.acquire()
         self.currentTimer = None
         self.currentTimerTag = None
@@ -21,8 +20,8 @@ class Test(unittest.TestCase):
         timer.scheduleIn = self.scheduleTimerIn
         timer.cancelAllByTag = self.cancelAllTimersByTag
         requirements = dict(node0=dict(imageHint='alpha-bravo', imageLabel='tango-lima'),
-                                 node1=dict(imageHint='charlie-delta', imageLabel='kilo-juliet'),
-                                 node2=dict(imageHint='echo-foxtrot', imageLabel='zooloo-papa'))
+                            node1=dict(imageHint='charlie-delta', imageLabel='kilo-juliet'),
+                            node2=dict(imageHint='echo-foxtrot', imageLabel='zooloo-papa'))
         self.index = random.randint(1, sys.maxint)
         self.allocationInfo = 'This allocation has got swag.'
         self.allocated = dict((hostName, HostStateMachine(Host(hostName)))
@@ -37,7 +36,6 @@ class Test(unittest.TestCase):
                                             self.broadcaster, self.freepool, hosts)
 
     def tearDown(self):
-#       print 'Releasing lock'
         globallock._lock.release()
 
     def test_Index(self):
@@ -59,7 +57,6 @@ class Test(unittest.TestCase):
 
     def test_Free(self):
         self.tested.free()
-        self.broadcaster.allocationChangedState.assert_called_once_with(self.tested.index())
         self.assertEquals(self.tested.dead(), "freed")
         self.validateDeathResult()
 
@@ -71,7 +68,7 @@ class Test(unittest.TestCase):
 
     def test_Withdraw(self):
         self.tested.withdraw("Don't want this allocation anymore")
-        self.assertIsNotNone(self.tested.dead())
+        self.assertEquals(self.tested.dead(), "withdrawn")
         self.validateDeathResult()
 
     def test_HeartBeatWhenDeadDoesNothing(self):
@@ -80,6 +77,7 @@ class Test(unittest.TestCase):
         self.assertIsNone(self.currentTimer)
         self.tested.heartbeat()
         self.assertIsNone(self.currentTimer)
+        self.validateDeathResult()
 
     def test_NotDeadForAWhileIfNotDead(self):
         self.assertFalse(self.tested.deadForAWhile())
@@ -147,18 +145,18 @@ class Test(unittest.TestCase):
         for stateMachine in self.allocatedCopy.values():
             stateMachine.fakeInaugurationDone()
 
-    def scheduleTimerIn(self, timeout, callback, tag):                                                       
-        self.assertIs(self.currentTimer, None)                                                               
-        self.assertIs(self.currentTimerTag, None)                                                            
-        self.currentTimer = callback                                                                         
-        self.currentTimerTag = tag                                                                           
+    def scheduleTimerIn(self, timeout, callback, tag):
+        self.assertIs(self.currentTimer, None)
+        self.assertIs(self.currentTimerTag, None)
+        self.currentTimer = callback
+        self.currentTimerTag = tag
 
-    def cancelAllTimersByTag(self, tag):                                                                     
-        if self.currentTimerTag is not None:                                                                 
-            self.assertIsNot(self.currentTimer, None)                                                        
-            self.assertIs(self.currentTimerTag, tag)                                                         
-        self.currentTimer = None                                                                             
-        self.currentTimerTag = None                                                                          
+    def cancelAllTimersByTag(self, tag):
+        if self.currentTimerTag is not None:
+            self.assertIsNot(self.currentTimer, None)
+            self.assertIs(self.currentTimerTag, tag)
+        self.currentTimer = None
+        self.currentTimerTag = None
 
     def validateDeathResult(self):
         self.assertEquals(self.allocatedCopy, self.allocated)
@@ -170,6 +168,7 @@ class Test(unittest.TestCase):
             else:
                 self.assertIn(stateMachine, freePoolStateMachines)
                 self.assertFalse(stateMachine.isAssigned())
+        self.broadcaster.allocationChangedState.assert_called_once_with(self.tested.index())
 
 if __name__ == '__main__':
     unittest.main()
