@@ -104,6 +104,7 @@ class Allocation:
         self._death = dict(when=time.time(), reason=reason)
         timer.cancelAllByTag(tag=self)
         self._broadcaster.allocationChangedState(self._index)
+        self._broadcaster.cleanupAllocationPublishResources(self._index)
         logging.info("Allocation %(idx)s died.", dict(idx=self._index))
 
     def _stateMachineChangedState(self, name, stateMachine):

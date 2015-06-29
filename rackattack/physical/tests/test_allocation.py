@@ -169,6 +169,7 @@ class Test(unittest.TestCase):
                 self.assertIn(stateMachine, freePoolStateMachines)
                 self.assertFalse(stateMachine.isAssigned())
         self.broadcaster.allocationChangedState.assert_called_once_with(self.tested.index())
+        self.broadcaster.cleanupAllocationPublishResources.assert_called_once_with(self.tested.index())
 
 if __name__ == '__main__':
     unittest.main()
