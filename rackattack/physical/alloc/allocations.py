@@ -59,7 +59,8 @@ class Allocations:
 
     def _verifyLabelsExistsInOsmosis(self, labels):
         for label in labels:
-            exists = sh.run([
+            existingLabels = sh.run([
                 "osmosis", "listlabels", label, "--objectStores", self._osmosisServer + ":1010"]).strip()
-            if not exists:
+            existingLabels = existingLabels.splitlines()
+            if label not in existingLabels:
                 raise Exception("Label '%s' does not exist on object store" % label)

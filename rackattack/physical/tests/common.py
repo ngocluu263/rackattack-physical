@@ -1,3 +1,5 @@
+import time
+import mock
 from rackattack import api
 from rackattack.common import hoststatemachine
 
@@ -124,3 +126,14 @@ class Allocations:
 
     def all(self):
         return self.allocations
+
+
+def executeCodeWhileAllocationIsDeadOfHeartbeatTimeout(_allocation, callback):
+    orig_time = time.time
+    timeInWhichAllocationIsDeadForAWhile = time.time() + _allocation._LIMBO_AFTER_DEATH_DURATION + 1
+    try:
+        time.time = mock.Mock(return_value=timeInWhichAllocationIsDeadForAWhile)
+        assert _allocation.deadForAWhile()
+        callback()
+    finally:
+        time.time = orig_time

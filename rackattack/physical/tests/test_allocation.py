@@ -8,15 +8,14 @@ from rackattack.common import timer
 from rackattack.common import globallock
 from rackattack.physical.alloc import allocation
 from rackattack.physical.alloc.freepool import FreePool
-from rackattack.physical.tests.common import HostStateMachine, Host, Hosts
-
+from rackattack.physical.tests.common import (HostStateMachine, Host, Hosts,
+executeCodeWhileAllocationIsDeadOfHeartbeatTimeout)
 
 class Test(unittest.TestCase):
     def setUp(self):
         globallock._lock.acquire()
         self.currentTimer = None
         self.currentTimerTag = None
-        timer.cancelAllByTag = mock.Mock()
         timer.scheduleIn = self.scheduleTimerIn
         timer.cancelAllByTag = self.cancelAllTimersByTag
         requirements = dict(node0=dict(imageHint='alpha-bravo', imageLabel='tango-lima'),
@@ -90,14 +89,8 @@ class Test(unittest.TestCase):
         self.fakeInaugurationDoneForAll()
 
     def test_DeadForAWhile(self):
-        orig_time = time.time
         self.tested.free()
-        timeInWhichAllocationIsDeadForAWhile = time.time() + self.tested._LIMBO_AFTER_DEATH_DURATION + 1
-        try:
-            time.time = mock.Mock(return_value=timeInWhichAllocationIsDeadForAWhile)
-            self.assertTrue(self.tested.deadForAWhile())
-        finally:
-            time.time = orig_time
+        executeCodeWhileAllocationIsDeadOfHeartbeatTimeout(self.tested, lambda: None)
 
     def test_NotDeadForAWhile(self):
         orig_time = time.time
