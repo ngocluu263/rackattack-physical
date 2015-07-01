@@ -12,6 +12,8 @@ unittest: check_requirements
 check_convention:
 	pep8 rackattack --max-line-length=109
 
+check_before_commit: check_convention unittest
+
 .PHONY: build
 build: check_requirements build/rackattack.physical.egg
 
