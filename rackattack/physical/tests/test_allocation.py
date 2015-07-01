@@ -9,7 +9,8 @@ from rackattack.common import globallock
 from rackattack.physical.alloc import allocation
 from rackattack.physical.alloc.freepool import FreePool
 from rackattack.physical.tests.common import (HostStateMachine, Host, Hosts,
-executeCodeWhileAllocationIsDeadOfHeartbeatTimeout)
+                                              executeCodeWhileAllocationIsDeadOfHeartbeatTimeout)
+
 
 class Test(unittest.TestCase):
     def setUp(self):

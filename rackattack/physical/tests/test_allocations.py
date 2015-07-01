@@ -7,13 +7,14 @@ from rackattack.common import globallock
 from rackattack.physical.alloc import allocation
 from rackattack.physical.alloc.allocations import Allocations
 from rackattack.physical.tests.common import (Host, HostStateMachine, FreePool, Hosts, FreePool,
-executeCodeWhileAllocationIsDeadOfHeartbeatTimeout)
+                                              executeCodeWhileAllocationIsDeadOfHeartbeatTimeout)
 
 
 def osmosisListLabelsFoundMock(cmd):
     if cmd[0:2] == ['osmosis', 'listlabels']:
         return cmd[2]
     raise ValueError("Implement me")
+
 
 class Test(unittest.TestCase):
     def setUp(self):
@@ -34,7 +35,7 @@ class Test(unittest.TestCase):
             self.freePool.put(stateMachine)
         self.tested = Allocations(self.broadcaster, self.hosts, self.freePool, self.osmosisServer)
         self.requirements = dict(node0=dict(imageLabel="echo-foxtrot", imageHint="golf"),
-                            node1=dict(imageLabel="hotel-india", imageHint="juliet"))
+                                 node1=dict(imageLabel="hotel-india", imageHint="juliet"))
 
     def tearDown(self):
         globallock._lock.release()
@@ -57,6 +58,7 @@ class Test(unittest.TestCase):
 
     def test_OsmosisListLabelsReturnsAnotherLabel(self):
         abused = False
+
         def anotherLabelMock(cmd):
             if cmd[0:2] == ['osmosis', 'listlabels']:
                 return cmd[2] + "_not"
@@ -68,8 +70,8 @@ class Test(unittest.TestCase):
     def test_CreateCleansUp(self):
         _allocation = self.createAllocation(self.requirements, self.allocationInfo)
         _allocation.free()
-        executeCodeWhileAllocationIsDeadOfHeartbeatTimeout(_allocation,
-            lambda: self.createAllocation(self.requirements, self.allocationInfo))
+        createCallback = lambda: self.createAllocation(self.requirements, self.allocationInfo)
+        executeCodeWhileAllocationIsDeadOfHeartbeatTimeout(_allocation, createCallback)
         self.assertNotIn(_allocation, self.tested.all())
 
     def test_byIndexCleansUp(self):
@@ -82,6 +84,7 @@ class Test(unittest.TestCase):
     def test_AllCleansUp(self):
         _allocation = self.createAllocation(self.requirements, self.allocationInfo)
         _allocation.free()
+
         def validateNotInAll():
             self.assertNotIn(_allocation, self.tested.all())
         executeCodeWhileAllocationIsDeadOfHeartbeatTimeout(_allocation, validateNotInAll)
