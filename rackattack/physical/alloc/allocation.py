@@ -7,7 +7,7 @@ import tempfile
 
 
 class Allocation:
-    _HEARTBEAT_TIMEOUT = 15
+    _HEARTBEAT_TIMEOUT = 45
     _LIMBO_AFTER_DEATH_DURATION = 60
 
     def __init__(self, index, requirements, allocationInfo, allocated, broadcaster, freePool, hosts):
