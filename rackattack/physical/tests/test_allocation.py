@@ -8,7 +8,7 @@ from rackattack.common import timer
 from rackattack.common import globallock
 from rackattack.physical.alloc import allocation
 from rackattack.physical.alloc.freepool import FreePool
-from rackattack.physical.tests.common import (HostStateMachine, Host, Hosts,
+from rackattack.physical.tests.common import (HostStateMachine, Host, Hosts, Publish,
                                               executeCodeWhileAllocationIsDeadOfHeartbeatTimeout)
 
 
@@ -27,7 +27,7 @@ class Test(unittest.TestCase):
         self.allocated = dict((hostName, HostStateMachine(Host(hostName)))
                               for hostName in requirements.keys())
         self.allocatedCopy = copy.copy(self.allocated)
-        self.broadcaster = mock.Mock()
+        self.broadcaster = Publish()
         hosts = Hosts()
         self.freepool = FreePool(hosts)
         for stateMachine in self.allocated.values():
@@ -162,8 +162,11 @@ class Test(unittest.TestCase):
             else:
                 self.assertIn(stateMachine, freePoolStateMachines)
                 self.assertFalse(stateMachine.isAssigned())
-        self.broadcaster.allocationChangedState.assert_called_once_with(self.tested.index())
-        self.broadcaster.cleanupAllocationPublishResources.assert_called_once_with(self.tested.index())
+        self.validateAllocationResourcesAreDeallocated(self.index)
+
+    def validateAllocationResourcesAreDeallocated(self, allocationID):
+        self.assertIn(self.index, self.broadcaster.removedExchanges)
+        self.assertNotIn(allocationID, self.broadcaster.declaredExchanges)
 
 if __name__ == '__main__':
     unittest.main()
