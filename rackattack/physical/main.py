@@ -1,14 +1,7 @@
 import sys
-import os
-if 'PIKA_EGG_PATH' in os.environ:
-    sys.path.insert(0, os.environ['PIKA_EGG_PATH'])
 import logging
+from rackattack.physical import pikapatch
 from rackattack.physical import logconfig
-from rackattack.ssh import connection
-connection.discardParamikoLogs()
-connection.discardSSHDebugMessages()
-logging.getLogger("pika").setLevel(logging.INFO)
-import time
 import argparse
 from rackattack.physical import config
 from rackattack.physical import network

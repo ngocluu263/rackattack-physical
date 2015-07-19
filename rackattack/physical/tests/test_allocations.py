@@ -70,7 +70,10 @@ class Test(unittest.TestCase):
     def test_CreateCleansUp(self):
         _allocation = self.createAllocation(self.requirements, self.allocationInfo)
         _allocation.free()
-        createCallback = lambda: self.createAllocation(self.requirements, self.allocationInfo)
+
+        def createCallback():
+            self.createAllocation(self.requirements, self.allocationInfo)
+
         executeCodeWhileAllocationIsDeadOfHeartbeatTimeout(_allocation, createCallback)
         self.assertNotIn(_allocation, self.tested.all())
 
