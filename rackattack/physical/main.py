@@ -48,7 +48,6 @@ with open(config.CONFIGURATION_FILE) as f:
     conf = yaml.load(f.read())
 
 network.setGatewayIP(conf['GATEWAY_IP'])
-network.setUpStaticPortForwardingForSSH(conf['PUBLIC_INTERFACE'])
 timer.TimersThread()
 tftpbootInstance = tftpboot.TFTPBoot(
     netmask=network.NETMASK,
