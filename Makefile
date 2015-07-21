@@ -50,3 +50,10 @@ ifneq ($(SKIP_REQUIREMENTS),1)
 	exit 1
 endif
 endif
+
+.PHONY: configure_nat
+configure_nat:
+ifeq ($(INTERFACE),)
+	$(error Please set the INTERFACE makefile argument to the name of the network interface which is used as the public gateway.)
+endif
+	sudo UPSETO_JOIN_PYTHON_NAMESPACES=Yes PYTHONPATH=. python -m rackattack.physical.configurenat $(INTERFACE)
