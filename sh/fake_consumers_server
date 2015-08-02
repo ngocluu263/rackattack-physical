@@ -1,0 +1,4 @@
+#!/bin/bash
+LOG_FILE=/var/fake_consumers_server.log
+UPSETO_JOIN_PYTHON_NAMESPACES=Yes PYTHONPATH=. PIKA_EGG_PATH=pika-stable/pika-git-ref-6226dc0.egg python rackattack/physical/tests/integration/main_fakehosts.py >& $LOG_FILE &
+echo "Log file for the fake consumers server: ${LOG_FILE}"

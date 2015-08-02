@@ -6,11 +6,13 @@ import threading
 import time
 import signal
 import errno
-from rackattack.physical import config
+from rackattack.physical import config, ipmi
 from rackattack.tcp import suicide
 
 
 class SerialOverLan(threading.Thread):
+    _IPMITOOL_FILENAME = ipmi.IPMI.IPMITOOL_FILENAME
+
     def __init__(self, hostname, username, password, hostID):
         self._hostname = hostname
         self._username = username
@@ -82,7 +84,7 @@ class SerialOverLan(threading.Thread):
 
     def _getSolCommand(self, action):
         NUMBER_OF_RETRIES = "10"
-        return ("ipmitool", "-I", "lanplus", "-H", self._hostname,
+        return (self._IPMITOOL_FILENAME, "-I", "lanplus", "-H", self._hostname,
                 "-U", self._username, "-P", self._password, "sol", action, "-R", NUMBER_OF_RETRIES)
 
     def _getSerialFilePath(self):

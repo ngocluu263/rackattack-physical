@@ -1,0 +1,30 @@
+#!/bin/bash
+
+mkdir -p /var/lib/rackattackphysical
+
+## Cleanup
+dd if=/var/fake_reboots_pipe iflag=nonblock of=/dev/null
+rm /var/fake_reboots_pipe || true
+mkfifo /var/fake_reboots_pipe
+
+# Rackattack
+echo "Starting Rackattack"
+RACKATTACK_LOG_FILE="/var/rackattack_integration_test.log"
+su -c "ulimit -Sn 2048"; PYTHONPATH=. PIKA_EGG_PATH=/usr/share/rackattack.physical/pika-git-ref-6226dc0.egg UPSETO_JOIN_PYTHON_NAMESPACES=Yes python rackattack/physical/tests/integration/main.py >& "${RACKATTACK_LOG_FILE}" &
+echo "Log file for Rackattack: ${RACKATTACK_LOG_FILE}"
+
+echo "Starting Rackattack dashboard..."
+systemctl start rackattack-physical-dashboard
+sleep 3
+
+# Fake consumers server
+./sh/fake_consumers_server &
+
+echo "Rackattack Reclamation server..."
+RECLAMATION_SERVER_LOG_FILE=/var/reclamation_server.log
+UPSETO_JOIN_PYTHON_NAMESPACES=Yes PYTHONPATH=. python rackattack/physical/tests/integration/main_reclamationserver.py &> $RECLAMATION_SERVER_LOG_FILE &
+echo "Log file for the reclamation server: ${RECLAMATION_SERVER_LOG_FILE}"
+
+echo "Starting fake test clients..."
+sleep 8
+PYTHONPATH=. RACKATTACK_PROVIDER=tcp://localhost:1014@@amqp://guest:guest@localhost:1013@@http://localhost:1016 UPSETO_JOIN_PYTHON_NAMESPACES=Yes PIKA_EGG_PATH=pika-stable/pika-git-ref-6226dc0.egg python rackattack/physical/tests/integration/main_faketestclients.py

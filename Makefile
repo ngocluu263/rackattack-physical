@@ -9,6 +9,10 @@ unittest: check_requirements
 	UPSETO_JOIN_PYTHON_NAMESPACES=Yes PYTHONPATH=. python -m coverage run -m rackattack.physical.tests.runner
 	python -m coverage report --show-missing --rcfile=coverage.config --fail-under=86 --include=$(COVERED_FILES)
 
+.PHONY: integration_test
+integration_test:
+	sudo ./sh/integration_test
+
 check_convention:
 	pep8 rackattack --max-line-length=109
 
