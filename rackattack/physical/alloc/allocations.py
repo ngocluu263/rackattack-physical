@@ -58,6 +58,7 @@ class Allocations:
         self._allocations = [a for a in self._allocations if not a.deadForAWhile()]
 
     def _verifyLabelsExistsInOsmosis(self, labels):
+        labels = set(labels)
         for label in labels:
             existingLabels = sh.run([
                 "osmosis", "listlabels", label, "--objectStores", self._osmosisServer + ":1010"]).strip()
