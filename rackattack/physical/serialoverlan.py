@@ -62,9 +62,8 @@ class SerialOverLan(threading.Thread):
             logging.error("SOL connection to %(hostname)s is broken", dict(hostname=self._hostname))
             time.sleep(INTERVAL)
         logging.error(
-            "All retries to establish SOL connection to %(hostname)s failed, comitting suicide", dict(
+            "All retries to establish SOL connection to %(hostname)s failed", dict(
                 hostname=self._hostname))
-        suicide.killSelf()
 
     def _popenSOL(self):
         self.truncateSerialLog()
