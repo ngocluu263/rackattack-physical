@@ -98,7 +98,6 @@ class DynamicConfig:
             id=hostInstance.id(), ip=hostInstance.ipAddress()))
         if hostData.get('offline', False):
             self._offlineHosts[hostData['id']] = hostInstance
-            hostInstance.turnOff()
             logging.info('Host %(host)s added in offline state', dict(host=hostInstance.id()))
         else:
             self._dnsmasq.add(hostData['primaryMAC'], hostInstance.ipAddress())

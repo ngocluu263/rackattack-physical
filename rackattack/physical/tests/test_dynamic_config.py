@@ -19,6 +19,7 @@ from rackattack.common import hoststatemachine
 from rackattack.physical.ipmi import IPMI
 import yaml
 from rackattack.physical.tests.common import HostStateMachine, Allocations, FreePool, Allocation
+from rackattack.physical.host import Host
 
 
 @patch('signal.signal')
@@ -143,6 +144,17 @@ class Test(unittest.TestCase):
         self._validateOnlineHosts()
         self._validateOfflineHosts()
         self._validateOnlineHostsAreInHostsPool()
+
+    def test_NotPoweringOffHostsWhenReoadingYaml(self, *_args):
+        origTurnOff = Host.turnOff
+        Host.turnOff = mock.Mock()
+        try:
+            self._init('offline_rack_conf.yaml')
+            actualOfflineHosts = self.tested.getOfflineHosts()
+            for host in actualOfflineHosts.values():
+                host.turnOff.assert_not_called()
+        finally:
+            Host.turnOff = origTurnOff
 
     def _validateOnlineHostsAreInHostsPool(self, exceptForIDs=[]):
         actualIDs = [host.hostImplementation().id() for host in self._hosts.all()]
