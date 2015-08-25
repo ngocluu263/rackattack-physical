@@ -34,27 +34,27 @@ class Test(unittest.TestCase):
         self.assertEquals(rootCredentials['username'], 'root')
         self.assertEquals(rootCredentials['password'], config.ROOT_PASSWORD)
         self.assertEquals(rootCredentials['hostname'], self.tested.ipAddress())
+        self.assertEquals(self.ipmiLogin, self.tested.ipmiLoginCredentials())
 
     def test_DestroyDoesNotRaiseAnException(self):
         self.tested.destroy()
 
-    def test_ColdRestart(self):
+    def test_ValidateSOLStarted(self):
         solInstance = mock.Mock()
         solInstance.serialLogFilename.return_value = "zoolootango"
         serialoverlan.SerialOverLan = mock.Mock(return_value=solInstance)
-        self.tested.coldRestart()
+        self.tested.validateSOLStarted()
         self.assertEquals(self.tested.serialLogFilename(), "zoolootango")
-        self.ipmiInstanceMock.powerCycle.assert_called_once_with()
 
     def test_TurnOff(self):
         self.tested.turnOff()
         self.ipmiInstanceMock.off.assert_called_once_with()
 
-    def test_TurnOffAfterColdRestart(self):
+    def test_TurnOffAfterSOLStarted(self):
         solInstance = mock.Mock()
         solInstance.serialLogFilename.return_value = "zoolootango"
         serialoverlan.SerialOverLan = mock.Mock(return_value=solInstance)
-        self.tested.coldRestart()
+        self.tested.validateSOLStarted()
         self.tested.turnOff()
         self.ipmiInstanceMock.off.assert_called_once_with()
         solInstance.stop.assert_called_once_with()
@@ -72,7 +72,7 @@ class Test(unittest.TestCase):
         serialoverlan.SerialOverLan = mock.Mock(return_value=solInstance)
         self.tested.truncateSerialLog()
         self.assertFalse(solInstance.called)
-        self.tested.coldRestart()
+        self.tested.validateSOLStarted()
         self.tested.truncateSerialLog()
         self.assertTrue(solInstance.truncateSerialLog.called)
 

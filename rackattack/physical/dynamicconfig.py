@@ -8,13 +8,14 @@ import logging
 
 
 class DynamicConfig:
-    def __init__(self, hosts, dnsmasq, inaugurate, tftpboot, freePool, allocations):
+    def __init__(self, hosts, dnsmasq, inaugurate, tftpboot, freePool, allocations, reclaimHost):
         self._hosts = hosts
         self._dnsmasq = dnsmasq
         self._inaugurate = inaugurate
         self._tftpboot = tftpboot
         self._freePool = freePool
         self._allocations = allocations
+        self._reclaimHost = reclaimHost
         self._rack = []
         self._offlineHosts = dict()
         self._onlineHosts = dict()
@@ -111,6 +112,7 @@ class DynamicConfig:
             inaugurate=self._inaugurate,
             tftpboot=self._tftpboot,
             dnsmasq=self._dnsmasq,
+            reclaimHost=self._reclaimHost,
             freshVMJustStarted=False)
         self._hosts.add(stateMachine)
         self._freePool.put(stateMachine)

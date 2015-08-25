@@ -1,0 +1,10 @@
+[Unit]
+Description=Rackattack Physical Reclamation
+After=network.target
+
+[Service]
+Type=simple
+Environment='PYTHONPATH=/usr/share/rackattack.physical/rackattack.physical.reclamation.egg' 'PIKA_EGG_PATH=/usr/share/rackattack.physical/pika-git-ref-6226dc0.egg'
+ExecStart=/usr/bin/python -m rackattack.physical.main_reclamationserver
+[Install]
+WantedBy=multi-user.target

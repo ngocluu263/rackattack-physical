@@ -20,6 +20,7 @@ from rackattack.physical.ipmi import IPMI
 import yaml
 from rackattack.physical.tests.common import HostStateMachine, Allocations, FreePool, Allocation
 from rackattack.physical.host import Host
+from rackattack.physical import reclaimhost
 
 
 @patch('signal.signal')
@@ -33,6 +34,7 @@ class Test(unittest.TestCase):
         self.inaguratorMock = mock.Mock(spec=inaugurate.Inaugurate)
         self.tftpMock = mock.Mock(spec=tftpboot.TFTPBoot)
         self.allocationsMock = Allocations()
+        self.reclaimHost = mock.Mock(spec=reclaimhost.ReclaimHost)
         timer.cancelAllByTag = mock.Mock()
         timer.scheduleAt = mock.Mock()
         timer.scheduleIn = mock.Mock()
@@ -51,7 +53,8 @@ class Test(unittest.TestCase):
                                                   inaugurate=self.inaguratorMock,
                                                   tftpboot=self.tftpMock,
                                                   freePool=self.freePoolMock,
-                                                  allocations=self.allocationsMock)
+                                                  allocations=self.allocationsMock,
+                                                  reclaimHost=self.reclaimHost)
 
     def test_BringHostsOnline(self, *_args):
         self._init('offline_rack_conf.yaml')

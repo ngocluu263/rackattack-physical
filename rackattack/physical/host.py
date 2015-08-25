@@ -36,9 +36,7 @@ class Host:
     def rootSSHCredentials(self):
         return dict(hostname=self.ipAddress(), username="root", password=config.ROOT_PASSWORD)
 
-    def coldRestart(self):
-        logging.info("Cold booting host %(id)s", dict(id=self._id))
-        self._ipmi.powerCycle()
+    def validateSOLStarted(self):
         if self._sol is None:
             self._sol = serialoverlan.SerialOverLan(hostID=self._id, **self._ipmiLogin)
             self._solFilename = self._sol.serialLogFilename()
@@ -69,3 +67,6 @@ class Host:
 
     def reconfigureBIOS(self):
         logging.warning("Implement me!")
+
+    def ipmiLoginCredentials(self):
+        return self._ipmiLogin

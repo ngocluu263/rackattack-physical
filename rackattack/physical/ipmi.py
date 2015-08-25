@@ -6,6 +6,7 @@ import multiprocessing.pool
 
 class IPMI:
     _CONCURRENCY = 4
+    IPMITOOL_FILENAME = "ipmitool"
     _pool = None
 
     def __init__(self, hostname, username, password):
