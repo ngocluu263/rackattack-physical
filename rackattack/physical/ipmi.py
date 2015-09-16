@@ -29,7 +29,7 @@ class IPMI:
     def _powerCommand(self, command):
         NUMBER_OF_RETRIES = 10
         cmdLine = [
-            self.IPMITOOL_FILENAME, "power", command,
+            self.IPMITOOL_FILENAME, "-I", "lanplus", "power", command,
             "-H", str(self._hostname), "-U", self._username, "-P", self._password]
         for i in xrange(NUMBER_OF_RETRIES - 1):
             try:
