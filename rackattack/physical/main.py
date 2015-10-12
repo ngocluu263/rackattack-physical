@@ -47,8 +47,8 @@ if args.managedPostMortemPacksDirectory:
 
 with open(config.CONFIGURATION_FILE) as f:
     conf = yaml.load(f.read())
+network.initialize_globals(conf)
 
-network.setGatewayIP(conf['GATEWAY_IP'])
 timer.TimersThread()
 withLocalObjectStore = config.WITH_LOCAL_OBJECT_STORE
 tftpbootInstance = tftpboot.TFTPBoot(
@@ -88,7 +88,6 @@ dynamicConfig = dynamicconfig.DynamicConfig(
     allocations=allocationsInstance,
     reclaimHost=reclaimHost)
 ipcServer = ipcserver.IPCServer(
-    publicNATIP=conf['PUBLIC_NAT_IP'],
     osmosisServerIP=conf['OSMOSIS_SERVER_IP'],
     dnsmasq=dnsmasqInstance,
     allocations=allocationsInstance,

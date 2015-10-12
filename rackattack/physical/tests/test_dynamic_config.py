@@ -20,7 +20,7 @@ from rackattack.physical.ipmi import IPMI
 import yaml
 from rackattack.physical.tests.common import HostStateMachine, Allocations, FreePool, Allocation
 from rackattack.physical.host import Host
-from rackattack.physical import reclaimhost
+from rackattack.physical import reclaimhost, network
 
 
 @patch('signal.signal')
@@ -41,6 +41,10 @@ class Test(unittest.TestCase):
         self._hosts = hosts.Hosts()
         self.freePoolMock = FreePool(self._hosts)
         hoststatemachine.HostStateMachine = HostStateMachine
+        configurationFile = "etc.rackattack.physical.conf.example"
+        with open(configurationFile) as f:
+            self.conf = yaml.load(f.read())
+        network.initialize_globals(self.conf)
 
     def _setRackConf(self, fixtureFileName):
         config.RACK_YAML = os.path.join(os.path.dirname

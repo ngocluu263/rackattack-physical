@@ -1,61 +1,59 @@
 import netaddr
 
 
-_NETMASK_PREFIX_LENGTH = 22
-_NR_RESERVED_HOSTS = 10
-_IP_ADDRESS_FORMAT = "192.168.%d.%d"
-GATEWAY_IP_ADDRESS = _IP_ADDRESS_FORMAT % (1, 1)
-_HOSTS = None
 NETMASK = None
-BOOTSERVER_IP_ADDRESS = None
 LAST_INDEX = None
 FIRST_IP = None
 LAST_IP = None
+_NODES = None
+PUBLIC_NAT_IP = None
+BOOTSERVER_IP_ADDRESS = None
+GATEWAY_IP_ADDRESS = None
 
 
-def getHostsAddresses(subnet):
-    global _NR_RESERVER_HOSTS
-    for address in subnet:
-        if address.words[2] > 1 or (address.words[2] == 1 and address.words[3] > _NR_RESERVED_HOSTS):
-            yield str(address)
-
-
-def setGatewayIP(ip):
-    global GATEWAY_IP_ADDRESS
-    GATEWAY_IP_ADDRESS = ip
+def getNodesAddresses(subnet, firstIP):
+    firstAddr = netaddr.IPAddress(firstIP)
+    subnetAddresses = list(subnet)
+    idxOfFirstAddr = subnetAddresses.index(firstAddr)
+    ipAddressesObjects = subnet[idxOfFirstAddr:]
+    for addressObject in ipAddressesObjects:
+        yield str(addressObject)
 
 
 def ipAddressFromHostIndex(index):
     assert index > 0
-    global _HOSTS
-    return _HOSTS[index - 1]
+    global _NODES
+    return _NODES[index - 1]
 
 
 def sshPortFromHostIndex(index):
     return 2010 + index
 
 
-def translateSSHCredentials(index, credentials, publicNATIP, peer):
-    global _HOSTS
-    if peer[0] in _HOSTS:
+def translateSSHCredentials(index, credentials, peer):
+    if peer[0] in _NODES:
         return credentials
+    if PUBLIC_NAT_IP is None or not PUBLIC_NAT_IP:
+        return dict(credentials, port=22)
     assert ipAddressFromHostIndex(index) == credentials['hostname']
-    return dict(credentials, hostname=publicNATIP, port=sshPortFromHostIndex(index))
+    return dict(credentials, hostname=PUBLIC_NAT_IP, port=sshPortFromHostIndex(index))
 
 
-def initialize_globals():
-    global _HOSTS, NETMASK, GATEWAY_IP_ADDRESS, BOOTSERVER_IP_ADDRESS, LAST_INDEX, FIRST_IP, LAST_IP
-    firstAddrInSubnet = _IP_ADDRESS_FORMAT % (0, 0)
-    subnet = netaddr.IPNetwork("%(firstAddr)s/%(prefixLen)s" % dict(firstAddr=firstAddrInSubnet,
-                                                                    prefixLen=_NETMASK_PREFIX_LENGTH))
+def initialize_globals(conf):
+    global _NODES, NETMASK, LAST_INDEX, FIRST_IP, LAST_IP, PUBLIC_NAT_IP, GATEWAY_IP_ADDRESS, \
+            BOOTSERVER_IP_ADDRESS
+    FIRST_IP = conf["FIRST_IP"]
+    prefixLength = conf["NODES_SUBNET_PREFIX_LENGTH"]
+    subnet = netaddr.IPNetwork("%(firstAddr)s/%(prefixLen)s" % dict(firstAddr=FIRST_IP,
+                                                                    prefixLen=prefixLength))
+    assert FIRST_IP in subnet
     NETMASK = str(subnet.netmask)
-    _HOSTS = list(getHostsAddresses(subnet))
-    GATEWAY_IP_ADDRESS = _IP_ADDRESS_FORMAT % (1, 1)
-    assert GATEWAY_IP_ADDRESS not in _HOSTS
-    BOOTSERVER_IP_ADDRESS = _IP_ADDRESS_FORMAT % (1, 1)
-    assert BOOTSERVER_IP_ADDRESS not in _HOSTS
-    LAST_INDEX = len(_HOSTS)
-    FIRST_IP = _HOSTS[0]
-    LAST_IP = _HOSTS[LAST_INDEX - 1]
-
-initialize_globals()
+    _NODES = list(getNodesAddresses(subnet, FIRST_IP))
+    assert FIRST_IP in _NODES
+    GATEWAY_IP_ADDRESS = conf["GATEWAY_IP"]
+    BOOTSERVER_IP_ADDRESS = conf["BOOTSERVER_IP"]
+    assert BOOTSERVER_IP_ADDRESS not in _NODES
+    assert BOOTSERVER_IP_ADDRESS in subnet
+    LAST_INDEX = len(_NODES)
+    LAST_IP = _NODES[LAST_INDEX - 1]
+    PUBLIC_NAT_IP = conf.get("PUBLIC_NAT_IP", None)

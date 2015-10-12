@@ -25,7 +25,7 @@ def main():
     logger.info("Starting reclamation worker process. PID: %(pid)s", dict(pid=os.getpid()))
     with open(config.CONFIGURATION_FILE, "r") as f:
         conf = yaml.load(f.read())
-    network.setGatewayIP(conf['GATEWAY_IP'])
+    network.initialize_globals(conf)
     reclamationserver = ReclamationServer(network.NETMASK,
                                           conf['OSMOSIS_SERVER_IP'],
                                           network.BOOTSERVER_IP_ADDRESS,

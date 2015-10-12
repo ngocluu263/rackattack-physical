@@ -1,7 +1,16 @@
 #ip of the osmosis server passed to inaugurator - should be the inside ip address of osmosis object store if possible
 OSMOSIS_SERVER_IP: 10.0.0.26
-# the public nat that connects the rack to your network. it is the same ip of the rackattack server if they are the same server, but they might not be
-PUBLIC_NAT_IP: 10.0.0.101
+# the public nat that connects the rack to your network. it is the same ip of the rackattack server if they are the same server, but they might not be.
+# if left empty, then this means that the network is routable (and not behind a NAT), so the test clients connect using their ip address in the network.
+PUBLIC_NAT_IP: 192.168.1.2
 # the iptables rules will find the name of the public nic if you specify its mac here. not very useful if the nat is not the same server.
 # you can also have the nic name here, but it's less reliable
 PUBLIC_INTERFACE: "00:1e:67:44:13:a1"
+# the following two parametere define the subnet used for the nodes. note that the provider and all other "provider" servers (osmosis, nat, etc.), that are in this network, have to be configured with this subnet as well.
+NODES_SUBNET_PREFIX_LENGTH: 22
+# ip of the first node in the range of nodes. this must not be the first ip in the subnet, since the subnet has to contain an address for the "provider" servers as well. the range from the first ip in the subnet until (not including) this address, is the reserved range for "provider" servers.
+FIRST_IP: 192.168.1.11
+# ip of the rackattack provider which provides the DHCP, PXE and inaugurator. this must be within the nodes subnet, but lower than `FIRST_IP` (lower than the address of the first node).
+BOOTSERVER_IP: 192.168.1.1
+# gateway used by the nodes (passed to the inaugurator). Must be within the nodes subnet, but lower than the IP of the first node.
+GATEWAY_IP: 192.168.1.2

@@ -1,17 +1,20 @@
+import yaml
 import ipaddr
 import unittest
+from rackattack.physical import config
 from rackattack.physical import network
 
 
 class Test(unittest.TestCase):
     def setUp(self):
+        configurationFile = "etc.rackattack.physical.conf.example"
+        with open(configurationFile) as f:
+            self.conf = yaml.load(f.read())
+        network.initialize_globals(self.conf)
         self.tested = network
+        self.tested.initialize_globals(self.conf)
         self.expectedIPAddressFormat = "192.168.{}.{}"
         self.expectedNrRacks = 11
-
-    def test_SetGatewayIP(self):
-        self.tested.setGatewayIP("192.168.1.3")
-        self.assertEquals(self.tested.GATEWAY_IP_ADDRESS, "192.168.1.3")
 
     def test_IpAddressFromHostIndex(self):
         self.expectedNrRacks = 11
@@ -32,26 +35,59 @@ class Test(unittest.TestCase):
                     expectedIPAddressParts[0] += 1
                     self.assertLess(expectedIPAddressParts[0], 255)
 
-    def test_TranslateSSHCredentialsForClientInsideSubnet(self):
+    def test_TranslateSSHCredentialsForClientInsideSubnetWithNAT(self):
+        self.assertNotEqual("", self.conf["PUBLIC_NAT_IP"])
         hostIndex = 1
         clientHostname = self.tested.ipAddressFromHostIndex(hostIndex + 1)
         clientPort = 2000
-        hostname = self.tested.ipAddressFromHostIndex(hostIndex)
-        expectedCredentials = dict(hostname=hostname)
-        translatedCredentials = self.tested.translateSSHCredentials(hostIndex, expectedCredentials,
-                                                                    "somenat", peer=(clientHostname,
-                                                                                     clientPort))
+        hostnameBeforeTranslation = self.tested.ipAddressFromHostIndex(hostIndex)
+        credentialsBeforeTranslation = dict(hostname=hostnameBeforeTranslation)
+        expectedCredentials = credentialsBeforeTranslation
+        translatedCredentials = self.tested.translateSSHCredentials(hostIndex,
+                                                                    credentialsBeforeTranslation,
+                                                                    peer=(clientHostname, clientPort))
         self.assertEquals(translatedCredentials, expectedCredentials)
 
-    def test_TranslateSSHCredentialsForClientOutsideSubnet(self):
+    def test_TranslateSSHCredentialsForClientOutsideSubnetWithNAT(self):
+        self.assertNotEqual("", self.conf["PUBLIC_NAT_IP"])
         hostIndex = 1
         clientHostname = "200.1.1.1"
         clientPort = 2000
-        hostname = self.tested.ipAddressFromHostIndex(hostIndex)
-        credentials = dict(hostname=hostname)
-        translatedCredentials = self.tested.translateSSHCredentials(hostIndex, credentials, "somenat",
+        hostnameBeforeTranslation = self.tested.ipAddressFromHostIndex(hostIndex)
+        credentialsBeforeTranslation = dict(hostname=hostnameBeforeTranslation)
+        translatedCredentials = self.tested.translateSSHCredentials(hostIndex,
+                                                                    credentialsBeforeTranslation,
                                                                     peer=(clientHostname, clientPort))
-        expectedCredentials = dict(hostname="somenat", port=self.tested.sshPortFromHostIndex(hostIndex))
+        expectedCredentials = dict(hostname=self.conf["PUBLIC_NAT_IP"],
+                                   port=self.tested.sshPortFromHostIndex(hostIndex))
+        self.assertEquals(translatedCredentials, expectedCredentials)
+
+    def test_TranslateSSHCredentialsForClientInsideSubnetWithoutNAT(self):
+        self.conf["PUBLIC_NAT_IP"] = ""
+        network.initialize_globals(self.conf)
+        hostIndex = 1
+        clientHostname = self.tested.ipAddressFromHostIndex(hostIndex + 1)
+        clientPort = 2000
+        hostnameBeforeTranslation = self.tested.ipAddressFromHostIndex(hostIndex)
+        credentialsBeforeTranslation = dict(hostname=hostnameBeforeTranslation, port=22)
+        expectedCredentials = credentialsBeforeTranslation
+        translatedCredentials = self.tested.translateSSHCredentials(hostIndex,
+                                                                    credentialsBeforeTranslation,
+                                                                    peer=(clientHostname, clientPort))
+        self.assertEquals(translatedCredentials, expectedCredentials)
+
+    def test_TranslateSSHCredentialsForClientOutsideSubnetWithoutNAT(self):
+        self.conf["PUBLIC_NAT_IP"] = ""
+        network.initialize_globals(self.conf)
+        hostIndex = 1
+        clientHostname = "200.1.1.1"
+        clientPort = 2000
+        hostnameBeforeTranslation = self.tested.ipAddressFromHostIndex(hostIndex)
+        credentialsBeforeTranslation = dict(hostname=hostnameBeforeTranslation, port=22)
+        expectedCredentials = credentialsBeforeTranslation
+        translatedCredentials = self.tested.translateSSHCredentials(hostIndex,
+                                                                    credentialsBeforeTranslation,
+                                                                    peer=(clientHostname, clientPort))
         self.assertEquals(translatedCredentials, expectedCredentials)
 
     def test_LotsOfHosts(self):
@@ -69,17 +105,6 @@ class Test(unittest.TestCase):
         for addrIdx in xrange(1, self.tested.LAST_INDEX + 1):
             ipAddr = self.tested.ipAddressFromHostIndex(addrIdx)
             self.assertTrue(network.Contains(ipaddr.IPv4Address(ipAddr)))
-
-    def test_Constants(self):
-        network = ipaddr.IPv4Network("%(firstIP)s/%(netmask)s" % dict(firstIP=self.tested.FIRST_IP,
-                                                                      netmask=self.tested.NETMASK))
-        for item in (self.tested.BOOTSERVER_IP_ADDRESS,
-                     self.tested.GATEWAY_IP_ADDRESS,
-                     self.tested.FIRST_IP,
-                     self.tested.LAST_IP):
-            self.assertIsInstance(item, str)
-            self.assertTrue(network.Contains(ipaddr.IPv4Address(item)))
-        self.assertIsInstance(self.tested.NETMASK, str)
 
 if __name__ == '__main__':
     unittest.main()

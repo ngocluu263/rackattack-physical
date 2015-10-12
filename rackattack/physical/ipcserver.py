@@ -6,9 +6,8 @@ import logging
 
 
 class IPCServer(baseipcserver.BaseIPCServer):
-    def __init__(self, publicNATIP, osmosisServerIP, dnsmasq, allocations, hosts, dynamicConfig,
+    def __init__(self, osmosisServerIP, dnsmasq, allocations, hosts, dynamicConfig,
                  reclaimHost):
-        self._publicNATIP = publicNATIP
         self._osmosisServerIP = osmosisServerIP
         self._dnsmasq = dnsmasq
         self._allocations = allocations
@@ -82,7 +81,6 @@ class IPCServer(baseipcserver.BaseIPCServer):
         return network.translateSSHCredentials(
             index=stateMachine.hostImplementation().index(),
             credentials=credentials,
-            publicNATIP=self._publicNATIP,
             peer=peer)
 
     def cmd_node__coldRestart(self, allocationID, nodeID, peer):
