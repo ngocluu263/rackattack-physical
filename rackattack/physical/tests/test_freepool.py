@@ -28,19 +28,6 @@ class Test(unittest.TestCase):
         host._destroyCallback(host)
         self.assertNotIn(host, self.tested.all())
 
-    def test_Listeners(self):
-        listener = mock.Mock()
-        host = HostStateMachine('host1')
-        self._hosts.add(host)
-
-        self.tested.registerPutListener(listener)
-        self.tested.put(host)
-        self.assertEquals(listener.call_count, 1)
-
-        self.tested.unregisterPutListener(listener)
-        self.tested.put(host)
-        self.assertEquals(listener.call_count, 1)
-
     def test_All(self):
         hosts = [HostStateMachine(str(i)) for i in xrange(10)]
         for host in hosts:
