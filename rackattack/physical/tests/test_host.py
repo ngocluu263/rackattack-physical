@@ -1,6 +1,7 @@
 import sys
 import mock
 import random
+import netaddr
 import unittest
 from rackattack.physical import ipmi
 from rackattack.physical import config
@@ -29,7 +30,9 @@ class Test(unittest.TestCase):
         self.assertEquals(self.id, self.tested.id())
         self.assertEquals(self.primaryMAC, self.tested.primaryMACAddress())
         self.assertEquals(self.secondaryMAC, self.tested.secondaryMACAddress())
-        self.assert_(self.tested.ipAddress().endswith("." + str(self.index + 10)))
+        ipAddress = self.tested.ipAddress()
+        netaddr.IPAddress(ipAddress)
+        del ipAddress
         rootCredentials = self.tested.rootSSHCredentials()
         self.assertEquals(rootCredentials['username'], 'root')
         self.assertEquals(rootCredentials['password'], config.ROOT_PASSWORD)
