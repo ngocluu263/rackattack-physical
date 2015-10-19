@@ -6,13 +6,18 @@ import logging
 
 
 class Host:
-    def __init__(self, index, id, ipmiLogin, primaryMAC, secondaryMAC, topology):
+    DEFAULT_POOL = "default"
+
+    def __init__(self, index, id, ipmiLogin, primaryMAC, secondaryMAC, topology, pool=None):
         self._index = index
         self._id = id
         self._ipmiLogin = ipmiLogin
         self._primaryMAC = primaryMAC
         self._secondaryMAC = secondaryMAC
         self._topology = topology
+        if pool is None:
+            pool = self.DEFAULT_POOL
+        self._pool = pool
         self._ipmiLogin = ipmiLogin
         self._ipmi = ipmi.IPMI(**ipmiLogin)
         self._sol = None
@@ -33,6 +38,9 @@ class Host:
     def ipAddress(self):
         return network.ipAddressFromHostIndex(self._index)
 
+    def pool(self):
+        return self._pool
+
     def rootSSHCredentials(self):
         return dict(hostname=self.ipAddress(), username="root", password=config.ROOT_PASSWORD)
 
@@ -52,6 +60,11 @@ class Host:
         logging.info("Host %(id)s destroyed", dict(id=self._id))
 
     def fulfillsRequirement(self, requirement):
+        requestedPool = requirement.get("pool", self.DEFAULT_POOL)
+        if requestedPool is None:
+            requestedPool = self.DEFAULT_POOL
+        if requestedPool != self.pool():
+            return False
         return True
 
     def serialLogFilename(self):

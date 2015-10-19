@@ -23,7 +23,7 @@ class Test(unittest.TestCase):
         ipmi.IPMI = self.ipmiMock
         self.tested = Host(index=self.index, id=self.id, ipmiLogin=self.ipmiLogin,
                            primaryMAC=self.primaryMAC, secondaryMAC=self.secondaryMAC,
-                           topology=self.topology)
+                           topology=self.topology, pool="thePool")
 
     def test_Fields(self):
         self.assertEquals(self.index, self.tested.index())
@@ -38,6 +38,7 @@ class Test(unittest.TestCase):
         self.assertEquals(rootCredentials['password'], config.ROOT_PASSWORD)
         self.assertEquals(rootCredentials['hostname'], self.tested.ipAddress())
         self.assertEquals(self.ipmiLogin, self.tested.ipmiLoginCredentials())
+        self.assertEquals("thePool", self.tested.pool())
 
     def test_DestroyDoesNotRaiseAnException(self):
         self.tested.destroy()
@@ -64,7 +65,27 @@ class Test(unittest.TestCase):
         self.assertEquals(self.tested.serialLogFilename(), "zoolootango")
 
     def test_FulfillsRequirement(self):
-        self.assertTrue(self.tested.fulfillsRequirement('iwanticecream'))
+        requirement = dict(pool="thePool")
+        self.assertTrue(self.tested.fulfillsRequirement(requirement))
+        requirement = dict(pool="notThePool")
+        self.assertFalse(self.tested.fulfillsRequirement(requirement))
+        requirement = dict(pool=Host.DEFAULT_POOL)
+        self.assertFalse(self.tested.fulfillsRequirement(requirement))
+        requirement = dict()
+        self.assertFalse(self.tested.fulfillsRequirement(requirement))
+        requirement = dict(pool=None)
+        self.assertFalse(self.tested.fulfillsRequirement(requirement))
+        hostInDefault = Host(index=self.index, id=self.id, ipmiLogin=self.ipmiLogin,
+                             primaryMAC=self.primaryMAC, secondaryMAC=self.secondaryMAC,
+                             topology=self.topology, pool=Host.DEFAULT_POOL)
+        requirement = dict(pool="thePool")
+        self.assertFalse(hostInDefault.fulfillsRequirement(requirement))
+        requirement = dict(pool=Host.DEFAULT_POOL)
+        self.assertTrue(hostInDefault.fulfillsRequirement(requirement))
+        requirement = dict()
+        self.assertTrue(hostInDefault.fulfillsRequirement(requirement))
+        requirement = dict(pool=None)
+        self.assertTrue(hostInDefault.fulfillsRequirement(requirement))
 
     def test_SerialLogFilenameRaisesExceptionWhenSOLNotStarted(self):
         self.assertRaises(Exception, self.tested.serialLogFilename)
