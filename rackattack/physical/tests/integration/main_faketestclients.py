@@ -87,11 +87,12 @@ class RackattackTestClients(threading.Thread):
         else:
             minorityAction()
 
-    def _generateRequirements(self, nrHosts):
+    def _generateRequirements(self, nrHosts, pool):
         requirements = dict([("{}{}".format(self._nodeBaseName, nodeIdx),
                               Requirement(imageLabel=self._label,
                                           imageHint=self._label,
-                                          hardwareConstraints=None))
+                                          hardwareConstraints=None,
+                                          pool=pool))
                              for nodeIdx in xrange(nrHosts)])
         return requirements
 
@@ -99,18 +100,19 @@ class RackattackTestClients(threading.Thread):
         allocationInfo = AllocationInfo(user="johabab", purpose="loadTests")
         return allocationInfo
 
-    def allocate(self, nrHosts):
+    def allocate(self, nrHosts, pool="default"):
         self._updateNrAllocatedHosts()
-        self._allocate(nrHosts)
+        self._allocate(nrHosts, pool)
 
     def _allocateForBackground(self):
         nrHosts = self._getRandomNrHosts()
         self._allocate(nrHosts)
 
-    def _allocate(self, nrHostsToAllocate):
-        requirements = self._generateRequirements(nrHostsToAllocate)
+    def _allocate(self, nrHostsToAllocate, pool="default"):
+        requirements = self._generateRequirements(nrHostsToAllocate, pool=pool)
         allocationInfo = self._generateAllocationInfo()
-        print "Trying to allocate %(nrHosts)s hosts" % dict(nrHosts=len(requirements))
+        print "Trying to allocate %(nrHosts)s hosts from %(pool)s" % dict(nrHosts=len(requirements),
+                                                                          pool=pool)
         allocation = None
         try:
             allocation = self._client.allocate(requirements, allocationInfo)
@@ -169,9 +171,9 @@ def bgStress(mode):
         backgroundStressTestClient.stop()
 
 
-def allocate(nrHosts):
+def allocate(nrHosts, pool="default"):
     nrHosts = int(nrHosts)
-    profilingTestClient.allocate(nrHosts)
+    profilingTestClient.allocate(nrHosts, pool=pool)
     profilingAllocation = True
 
 
@@ -183,8 +185,8 @@ def main():
     print """Available commands:
         bgstress on/off
         \tRuns allocations (and frees them) in the background.
-        allocate nrHosts
-        \tAllocates the given number of hosts (up to 1 allocations concurrently).
+        allocate nrHosts [pool=default]
+        \tAllocates the given number of hosts from the given pool.
         free
         \tFrees the current allocation (which was created with the 'allocate' command, if such allocation
         exists."""
