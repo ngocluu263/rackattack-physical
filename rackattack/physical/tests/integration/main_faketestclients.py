@@ -16,9 +16,10 @@ class RackattackTestClients(threading.Thread):
     SCENARIOS = dict(few=(1, 4), moreThanFew=(5, 9),  many=(10, 30))
     SCENARIOS_PROBABILITIES = dict(few=0.7, moreThanFew=0.2, many=0.1)
 
-    def __init__(self):
+    def __init__(self, nodeBaseName="node"):
         assert(sum(self.SCENARIOS_PROBABILITIES.values()) == 1)
         super(RackattackTestClients, self).__init__()
+        self._nodeBaseName = nodeBaseName
         self._client = clientfactory.factory()
         self._label = self._generateLabelName()
         self._nrHosts = self._getNrHosts()
@@ -86,12 +87,8 @@ class RackattackTestClients(threading.Thread):
         else:
             minorityAction()
 
-    def _generateRequirements(self, nrHosts, forProfiling=False):
-        if forProfiling:
-            nodeNameBase = "profile"
-        else:
-            nodeNameBase = "node"
-        requirements = dict([("{}{}".format(nodeNameBase, nodeIdx),
+    def _generateRequirements(self, nrHosts):
+        requirements = dict([("{}{}".format(self._nodeBaseName, nodeIdx),
                               Requirement(imageLabel=self._label,
                                           imageHint=self._label,
                                           hardwareConstraints=None))
@@ -102,16 +99,16 @@ class RackattackTestClients(threading.Thread):
         allocationInfo = AllocationInfo(user="johabab", purpose="loadTests")
         return allocationInfo
 
-    def allocateForProfiling(self, nrHosts):
+    def allocate(self, nrHosts):
         self._updateNrAllocatedHosts()
-        self._allocate(nrHosts, forProfiling=True)
+        self._allocate(nrHosts)
 
     def _allocateForBackground(self):
         nrHosts = self._getRandomNrHosts()
         self._allocate(nrHosts)
 
-    def _allocate(self, nrHostsToAllocate, forProfiling=False):
-        requirements = self._generateRequirements(nrHostsToAllocate, forProfiling=forProfiling)
+    def _allocate(self, nrHostsToAllocate):
+        requirements = self._generateRequirements(nrHostsToAllocate)
         allocationInfo = self._generateAllocationInfo()
         print "Trying to allocate %(nrHosts)s hosts" % dict(nrHosts=len(requirements))
         allocation = None
@@ -161,8 +158,6 @@ class RackattackTestClients(threading.Thread):
 
 backgroundStressTestClient = None
 profilingTestClient = None
-client = None
-profilingAllocation = False
 
 
 def bgStress(mode):
@@ -175,38 +170,29 @@ def bgStress(mode):
 
 
 def allocate(nrHosts):
-    global profilingAllocation
-    if profilingAllocation:
-        print "An allocation already exists."
-    else:
-        nrHosts = int(nrHosts)
-        profilingTestClient.allocateForProfiling(nrHosts)
-        profilingAllocation = True
+    nrHosts = int(nrHosts)
+    profilingTestClient.allocate(nrHosts)
+    profilingAllocation = True
 
 
 def free():
-    global profilingAllocation
-    if profilingAllocation:
-        profilingTestClient.free()
-        profilingAllocation = False
-    else:
-        print "An allocation for profiling does not exist."
+    profilingTestClient.free()
 
 
 def main():
     print """Available commands:
-        bgstress <on/off>
+        bgstress on/off
         \tRuns allocations (and frees them) in the background.
-        allocate <nrHosts>
+        allocate nrHosts
         \tAllocates the given number of hosts (up to 1 allocations concurrently).
         free
         \tFrees the current allocation (which was created with the 'allocate' command, if such allocation
         exists."""
     import pdb
     pdb.set_trace()
-    global backgroundStressTestClient, profilingTestClient, client, profilingAllocation
-    backgroundStressTestClient = RackattackTestClients()
-    profilingTestClient = RackattackTestClients()
+    global backgroundStressTestClient, profilingTestClient, profilingAllocation
+    backgroundStressTestClient = RackattackTestClients("background-stress")
+    profilingTestClient = RackattackTestClients("profiling")
     client = clientfactory.factory()
     profilingAllocation = False
     commands = dict(bgstress=bgStress, allocate=allocate, free=free)
