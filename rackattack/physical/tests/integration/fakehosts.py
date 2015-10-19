@@ -240,5 +240,6 @@ class FakeHosts:
             self._onConnectionOpen,
             stop_ioloop_on_close=False)
         self._pikaPatcher = pikapatchwakeupfromanotherthread.PikaPatchWakeUpFromAnotherThread(
+            self._logger,
             self._connection)
         self._connection.ioloop.start()
