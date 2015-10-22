@@ -117,7 +117,8 @@ class IPCServer(baseipcserver.BaseIPCServer):
                      primaryMACAddress=host.primaryMACAddress(),
                      secondaryMACAddress=host.secondaryMACAddress(),
                      ipAddress=host.ipAddress(),
-                     state="OFFLINE")
+                     state="OFFLINE",
+                     pool=host.pool())
                 for host_id, host in self._dynamicConfig.getOfflineHosts().iteritems()]
 
     def _onlineHosts(self):
@@ -135,5 +136,6 @@ class IPCServer(baseipcserver.BaseIPCServer):
                      primaryMACAddress=host.primaryMACAddress(),
                      secondaryMACAddress=host.secondaryMACAddress(),
                      ipAddress=host.ipAddress(),
-                     state=STATE[statesOfHostsThatHaveMachines.get(hostID, STATE_DESTROYED)])
+                     state=STATE[statesOfHostsThatHaveMachines.get(hostID, STATE_DESTROYED)],
+                     pool=host.pool())
                 for hostID, host in self._dynamicConfig.getOnlineHosts().iteritems()]
