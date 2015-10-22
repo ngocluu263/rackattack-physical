@@ -25,6 +25,7 @@ from rackattack.common import httprootresource
 import inaugurator.server.config
 import yaml
 from rackattack.physical import reclaimhost
+from rackattack.common import hoststatemachine
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--requestPort", default=1014, type=int)
@@ -48,6 +49,7 @@ if args.managedPostMortemPacksDirectory:
 with open(config.CONFIGURATION_FILE) as f:
     conf = yaml.load(f.read())
 network.initialize_globals(conf)
+hoststatemachine.HostStateMachine.ALLOW_CLEARING_OF_DISK = conf["ALLOW_CLEARING_OF_DISK"]
 
 timer.TimersThread()
 withLocalObjectStore = config.WITH_LOCAL_OBJECT_STORE

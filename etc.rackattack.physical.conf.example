@@ -14,3 +14,5 @@ FIRST_IP: 192.168.1.11
 BOOTSERVER_IP: 192.168.1.1
 # gateway used by the nodes (passed to the inaugurator). Must be within the nodes subnet, but lower than the IP of the first node.
 GATEWAY_IP: 192.168.1.2
+# whether to allow clearing of node's disk after a number of failed cold reclamations
+ALLOW_CLEARING_OF_DISK: false
