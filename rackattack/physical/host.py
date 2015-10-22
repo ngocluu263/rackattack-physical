@@ -42,6 +42,12 @@ class Host:
     def pool(self):
         return self._pool
 
+    def setPool(self, pool):
+        if pool != self._pool:
+            logging.info("Moving host %(hostID)s from pool %(oldPool)s to %(newPool)s",
+                         dict(hostID=self._id, oldPool=self._pool, newPool=pool))
+            self._pool = pool
+
     def rootSSHCredentials(self):
         return dict(hostname=self.ipAddress(), username="root", password=config.ROOT_PASSWORD)
 

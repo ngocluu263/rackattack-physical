@@ -103,6 +103,10 @@ class Test(unittest.TestCase):
     def test_ReconfigureBIOSDoesNotRaisesAnException(self):
         self.tested.reconfigureBIOS()
 
+    def test_changePool(self):
+        self.tested.setPool("anotherpool")
+        self.assertEquals(self.tested.pool(), "anotherpool")
+
 
 if __name__ == '__main__':
     unittest.main()

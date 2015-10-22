@@ -73,12 +73,16 @@ class DynamicConfig:
         return hostID in self._hosts
 
     def _registeredHostConfiguration(self, hostData):
+        hostID = hostData["id"]
         if self._takenOffline(hostData):
-            logging.info("Host %(host)s has been taken offline", dict(host=hostData['id']))
+            logging.info("Host %(hostID)s has been taken offline", dict(hostID=hostID))
             self._takeHostOffline(hostData)
         elif self._takenOnline(hostData):
-            logging.info("Host %(host)s has been taken back online", dict(host=hostData['id']))
+            logging.info("Host %(hostID)s has been taken back online", dict(hostID=hostID))
             self._bringHostOnline(hostData)
+        host = self._hosts[hostID]
+        if "pool" in hostData:
+            host.setPool(hostData["pool"])
 
     def _reload(self):
         logging.info("Reloading configuration")
