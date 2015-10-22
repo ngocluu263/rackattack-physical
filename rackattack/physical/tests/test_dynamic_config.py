@@ -148,6 +148,7 @@ class Test(unittest.TestCase):
         self.dnsMasqMock.add.side_effect = AssertionError('Ignore this error')
         self.tested._reload()
         self._setRackConf('offline_rack_conf.yaml')
+        self.tested._reload()
         self._validateOnlineHosts()
         self._validateOfflineHosts()
         self._validateOnlineHostsAreInHostsPool()

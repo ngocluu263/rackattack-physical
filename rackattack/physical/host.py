@@ -8,7 +8,7 @@ import logging
 class Host:
     DEFAULT_POOL = "default"
 
-    def __init__(self, index, id, ipmiLogin, primaryMAC, secondaryMAC, topology, pool=None):
+    def __init__(self, index, id, ipmiLogin, primaryMAC, secondaryMAC, topology, pool=None, isOnline=True):
         self._index = index
         self._id = id
         self._ipmiLogin = ipmiLogin
@@ -18,6 +18,7 @@ class Host:
         if pool is None:
             pool = self.DEFAULT_POOL
         self._pool = pool
+        self._isOnline = isOnline
         self._ipmiLogin = ipmiLogin
         self._ipmi = ipmi.IPMI(**ipmiLogin)
         self._sol = None
@@ -83,3 +84,9 @@ class Host:
 
     def ipmiLoginCredentials(self):
         return self._ipmiLogin
+
+    def isOnline(self):
+        return self._isOnline
+
+    def setIsOnline(self, isOnline):
+        self._isOnline = isOnline
