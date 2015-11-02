@@ -19,7 +19,7 @@ from rackattack.common import hoststatemachine
 from rackattack.physical.ipmi import IPMI
 import yaml
 from rackattack.physical.tests.common import HostStateMachine, Allocations, FreePool, Allocation
-from rackattack.physical.host import Host
+from rackattack.physical.host import Host, STATES
 from rackattack.physical import reclaimhost, network
 
 
@@ -166,26 +166,26 @@ class Test(unittest.TestCase):
 
     def _validateOnlineHostsAreInHostsPool(self, exceptForIDs=[]):
         actualIDs = [host.hostImplementation().id() for host in self._hosts.all()]
-        expectedIDs = [host for host in self._hostsInConfiguration(offline=False)
+        expectedIDs = [host for host in self._hostsInConfiguration(state=STATES.ONLINE)
                        if host not in exceptForIDs]
         self.assertItemsEqual(actualIDs, expectedIDs)
 
     def _validateOnlineHosts(self):
-        expectedOnlineHosts = self._hostsInConfiguration(False)
+        expectedOnlineHosts = self._hostsInConfiguration(state=STATES.ONLINE)
         actualOnineHosts = self.tested.getOnlineHosts().keys()
         self.assertItemsEqual(expectedOnlineHosts, actualOnineHosts)
 
     def _validateOfflineHosts(self):
-        expectedOfflineHosts = self._hostsInConfiguration(True)
+        expectedOfflineHosts = self._hostsInConfiguration(state=STATES.OFFLINE)
         actualOfflineHosts = self.tested.getOfflineHosts().keys()
         self.assertItemsEqual(expectedOfflineHosts, actualOfflineHosts)
 
-    def _hostsInConfiguration(self, offline=None):
+    def _hostsInConfiguration(self, state=None):
         configuration = yaml.load(open(config.RACK_YAML, 'rb'))
         hosts = configuration['HOSTS']
-        if offline is None:
+        if state is None:
             return set([host['id'] for host in hosts])
-        return set([host['id'] for host in hosts if host.get('offline', False) == offline])
+        return set([host['id'] for host in hosts if host.get('state', STATES.ONLINE).upper() == state])
 
 
 if __name__ == '__main__':

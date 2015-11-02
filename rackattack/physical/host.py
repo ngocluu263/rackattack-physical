@@ -3,12 +3,24 @@ from rackattack.physical import network
 from rackattack.physical import config
 from rackattack.physical import serialoverlan
 import logging
+import enum
+
+
+class Enum(set):
+    def __getattr__(self, name):
+            if name in self:
+                    return name
+            raise AttributeError
+
+
+STATES = Enum(["ONLINE", "OFFLINE"])
 
 
 class Host:
     DEFAULT_POOL = "default"
 
-    def __init__(self, index, id, ipmiLogin, primaryMAC, secondaryMAC, topology, pool=None, isOnline=True):
+    def __init__(self, index, id, ipmiLogin, primaryMAC, secondaryMAC, topology, pool=None,
+                 state=STATES.ONLINE):
         self._index = index
         self._id = id
         self._ipmiLogin = ipmiLogin
@@ -18,7 +30,7 @@ class Host:
         if pool is None:
             pool = self.DEFAULT_POOL
         self._pool = pool
-        self._isOnline = isOnline
+        self.setState(state)
         self._ipmiLogin = ipmiLogin
         self._ipmi = ipmi.IPMI(**ipmiLogin)
         self._sol = None
@@ -91,8 +103,9 @@ class Host:
     def ipmiLoginCredentials(self):
         return self._ipmiLogin
 
-    def isOnline(self):
-        return self._isOnline
+    def state(self):
+        return self._state
 
-    def setIsOnline(self, isOnline):
-        self._isOnline = isOnline
+    def setState(self, state):
+        assert state in STATES, state
+        self._state = state

@@ -27,15 +27,16 @@ class DynamicConfig:
             return yaml.load(f.read())
 
     def _isOnline(self, hostID):
-        return self._hosts[hostID].isOnline()
+        return self._hosts[hostID].state() == host.STATES.ONLINE
 
     def _takenOffline(self, hostData):
-        return self._isOnline(hostData["id"]) and hostData.get('offline', False)
+        return self._isOnline(hostData["id"]) and \
+            hostData.get("state", host.STATES.ONLINE) == host.STATES.OFFLINE
 
     def _takeHostOffline(self, hostData):
         hostInstance = self._hosts[hostData['id']]
         assert hostInstance.id() == hostData['id']
-        hostInstance.setIsOnline(False)
+        hostInstance.setState(host.STATES.OFFLINE)
         self._dnsmasq.remove(hostData['primaryMAC'])
         hostInstance.turnOff()
         stateMachine = self._findStateMachine(hostInstance)
@@ -54,12 +55,13 @@ class DynamicConfig:
                 self._hostsStateMachines.destroy(stateMachine)
 
     def _takenOnline(self, hostData):
-        return not self._isOnline(hostData["id"]) and not hostData.get('offline', False)
+        return not self._isOnline(hostData["id"]) and hostData.get('state', host.STATES.ONLINE) \
+            == host.STATES.ONLINE
 
     def _bringHostOnline(self, hostData):
         hostInstance = self._hosts[hostData['id']]
         assert hostInstance.id() == hostData['id']
-        hostInstance.setIsOnline(True)
+        hostInstance.setState(host.STATES.ONLINE)
         try:
             self._dnsmasq.add(hostData['primaryMAC'], hostInstance.ipAddress())
         except AssertionError:
@@ -84,11 +86,16 @@ class DynamicConfig:
         if "pool" in hostData:
             host.setPool(hostData["pool"])
 
+    def _normalizeStateCase(self, hostData):
+        if "state" in hostData:
+            hostData["state"] = hostData["state"].upper()
+
     def _reload(self):
         logging.info("Reloading configuration")
         rack = self._loadRackYAML()
         with globallock.lock():
             for hostData in rack['HOSTS']:
+                self._normalizeStateCase(hostData)
                 if self._registeredHost(hostData["id"]):
                     self._registeredHostConfiguration(hostData)
                 else:
@@ -96,23 +103,17 @@ class DynamicConfig:
 
     def _newHostInConfiguration(self, hostData):
         chewed = dict(hostData)
-        if 'offline' in chewed:
-            isOffline = chewed["offline"]
-            if isOffline not in [True, False]:
-                logging.error("Invalid value for 'offline'")
-                raise ValueError(isOffline)
-            chewed["isOnline"] = not isOffline
-            del chewed["offline"]
         hostInstance = host.Host(index=self._availableIndex(), **chewed)
-        logging.info("Adding host %(id)s - %(ip)s", dict(
-            id=hostInstance.id(), ip=hostInstance.ipAddress()))
-        if hostData.get('offline', False):
-            logging.info('Host %(host)s added in offline state', dict(host=hostInstance.id()))
-        else:
+        hostID = hostInstance.id()
+        logging.info("Adding host %(hostID)s - %(ip)s", dict(hostID=hostID, ip=hostInstance.ipAddress()))
+        state = hostInstance.state()
+        if state == host.STATES.ONLINE:
             self._dnsmasq.add(hostData['primaryMAC'], hostInstance.ipAddress())
             self._startUsingHost(hostInstance)
-            logging.info('Host %(host)s added in online state', dict(host=hostInstance.id()))
-        self._hosts[hostData['id']] = hostInstance
+            logging.info('Host %(hostID)s added in online state', dict(hostID=hostID))
+        else:
+            logging.info('Host %(hostID)s added in %(state)s state', dict(state=state, hostID=hostID))
+        self._hosts[hostID] = hostInstance
 
     def _startUsingHost(self, hostInstance):
         stateMachine = hoststatemachine.HostStateMachine(
@@ -134,8 +135,12 @@ class DynamicConfig:
     def _availableIndex(self):
         return 1 + len(self._hosts)
 
+    def _getHostsByState(self, state):
+        return {hostID: host for (hostID, host) in self._hosts.iteritems() if
+                host.state() == state}
+
     def getOfflineHosts(self):
-        return {hostID: host for (hostID, host) in self._hosts.iteritems() if not host.isOnline()}
+        return self._getHostsByState(host.STATES.OFFLINE)
 
     def getOnlineHosts(self):
-        return {hostID: host for (hostID, host) in self._hosts.iteritems() if host.isOnline()}
+        return self._getHostsByState(host.STATES.ONLINE)
