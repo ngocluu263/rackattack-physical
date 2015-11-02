@@ -19,8 +19,7 @@ STATES = Enum(["ONLINE", "OFFLINE"])
 class Host:
     DEFAULT_POOL = "default"
 
-    def __init__(self, index, id, ipmiLogin, primaryMAC, secondaryMAC, topology, pool=None,
-                 state=STATES.ONLINE):
+    def __init__(self, index, id, ipmiLogin, primaryMAC, secondaryMAC, topology, state, pool=None):
         self._index = index
         self._id = id
         self._ipmiLogin = ipmiLogin

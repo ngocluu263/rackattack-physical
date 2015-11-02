@@ -7,7 +7,7 @@ import unittest
 from rackattack.physical import ipmi
 from rackattack.physical import config
 from rackattack.physical import network
-from rackattack.physical.host import Host
+from rackattack.physical import host
 from rackattack.physical import serialoverlan
 
 
@@ -23,9 +23,9 @@ class Test(unittest.TestCase):
         self.ipmiInstanceMock = mock.Mock()
         self.ipmiMock = mock.Mock(return_value=self.ipmiInstanceMock)
         ipmi.IPMI = self.ipmiMock
-        self.tested = Host(index=self.index, id=self.id, ipmiLogin=self.ipmiLogin,
-                           primaryMAC=self.primaryMAC, secondaryMAC=self.secondaryMAC,
-                           topology=self.topology, pool="thePool")
+        self.tested = host.Host(index=self.index, id=self.id, ipmiLogin=self.ipmiLogin,
+                                primaryMAC=self.primaryMAC, secondaryMAC=self.secondaryMAC,
+                                topology=self.topology, state=host.STATES.ONLINE, pool="thePool")
         with open(configurationFile) as f:
             self.conf = yaml.load(f.read())
         network.initialize_globals(self.conf)
@@ -74,18 +74,19 @@ class Test(unittest.TestCase):
         self.assertTrue(self.tested.fulfillsRequirement(requirement))
         requirement = dict(pool="notThePool")
         self.assertFalse(self.tested.fulfillsRequirement(requirement))
-        requirement = dict(pool=Host.DEFAULT_POOL)
+        requirement = dict(pool=host.Host.DEFAULT_POOL)
         self.assertFalse(self.tested.fulfillsRequirement(requirement))
         requirement = dict()
         self.assertFalse(self.tested.fulfillsRequirement(requirement))
         requirement = dict(pool=None)
         self.assertFalse(self.tested.fulfillsRequirement(requirement))
-        hostInDefault = Host(index=self.index, id=self.id, ipmiLogin=self.ipmiLogin,
-                             primaryMAC=self.primaryMAC, secondaryMAC=self.secondaryMAC,
-                             topology=self.topology, pool=Host.DEFAULT_POOL)
+        hostInDefault = host.Host(index=self.index, id=self.id, ipmiLogin=self.ipmiLogin,
+                                  primaryMAC=self.primaryMAC, secondaryMAC=self.secondaryMAC,
+                                  topology=self.topology, state=host.STATES.ONLINE,
+                                  pool=host.Host.DEFAULT_POOL)
         requirement = dict(pool="thePool")
         self.assertFalse(hostInDefault.fulfillsRequirement(requirement))
-        requirement = dict(pool=Host.DEFAULT_POOL)
+        requirement = dict(pool=host.Host.DEFAULT_POOL)
         self.assertTrue(hostInDefault.fulfillsRequirement(requirement))
         requirement = dict()
         self.assertTrue(hostInDefault.fulfillsRequirement(requirement))

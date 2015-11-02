@@ -67,7 +67,7 @@ class Test(unittest.TestCase):
         self.tested._reload()
         self._validateConfiguration()
 
-    def test_BringHostsOfflineWhileNotAllocated(self, *_args):
+    def test_BringOnlineHostsOfflineWhileNotAllocated(self, *_args):
         self._init('online_rack_conf.yaml')
         self._validateConfiguration()
         self._setRackConf('offline_rack_conf.yaml')
@@ -174,7 +174,7 @@ class Test(unittest.TestCase):
         hosts = configuration['HOSTS']
         if state is None:
             return set([host['id'] for host in hosts])
-        return set([host['id'] for host in hosts if host.get('state', STATES.ONLINE).upper() == state])
+        return set([host['id'] for host in hosts if host['state'].upper() == state])
 
 
 if __name__ == '__main__':

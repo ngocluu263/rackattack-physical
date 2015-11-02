@@ -29,9 +29,11 @@ class DynamicConfig:
     def _isOnline(self, hostID):
         return self._hosts[hostID].state() == host.STATES.ONLINE
 
-    def _takenOffline(self, hostData):
-        return self._isOnline(hostData["id"]) and \
-            hostData.get("state", host.STATES.ONLINE) == host.STATES.OFFLINE
+    def _wasHostStateChanged(self, hostData):
+        hostID = hostData["id"]
+        oldState = self._hosts[hostID].state()
+        newState = hostData["state"]
+        return oldState != newState
 
     def _takeHostOffline(self, hostData):
         hostInstance = self._hosts[hostData['id']]
@@ -54,10 +56,6 @@ class DynamicConfig:
                 logging.error("State machine was not removed from hosts pool")
                 self._hostsStateMachines.destroy(stateMachine)
 
-    def _takenOnline(self, hostData):
-        return not self._isOnline(hostData["id"]) and hostData.get('state', host.STATES.ONLINE) \
-            == host.STATES.ONLINE
-
     def _bringHostOnline(self, hostData):
         hostInstance = self._hosts[hostData['id']]
         assert hostInstance.id() == hostData['id']
@@ -76,15 +74,16 @@ class DynamicConfig:
 
     def _registeredHostConfiguration(self, hostData):
         hostID = hostData["id"]
-        if self._takenOffline(hostData):
-            logging.info("Host %(hostID)s has been taken offline", dict(hostID=hostID))
-            self._takeHostOffline(hostData)
-        elif self._takenOnline(hostData):
-            logging.info("Host %(hostID)s has been taken back online", dict(hostID=hostID))
-            self._bringHostOnline(hostData)
-        host = self._hosts[hostID]
+        if self._wasHostStateChanged(hostData):
+            newState = hostData["state"]
+            if newState == host.STATES.OFFLINE:
+                logging.info("Host %(hostID)s has been taken offline", dict(hostID=hostID))
+                self._takeHostOffline(hostData)
+            elif newState == host.STATES.ONLINE:
+                logging.info("Host %(hostID)s has been taken back online", dict(hostID=hostID))
+                self._bringHostOnline(hostData)
         if "pool" in hostData:
-            host.setPool(hostData["pool"])
+            self._hosts[hostID].setPool(hostData["pool"])
 
     def _normalizeStateCase(self, hostData):
         if "state" in hostData:
