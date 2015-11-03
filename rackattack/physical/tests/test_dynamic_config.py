@@ -166,8 +166,10 @@ class Test(unittest.TestCase):
         actualOfflineHosts = self.tested.getOfflineHosts().keys()
         self.assertItemsEqual(expectedOfflineHosts, actualOfflineHosts)
         idsOfHostsInFreePool = [host.hostImplementation().id() for host in self.freePoolMock.all()]
+        idsOfHostsInHostsPool = [host.hostImplementation().id() for host in self.freePoolMock.all()]
         for hostID in actualOfflineHosts:
             self.assertNotIn(hostID, idsOfHostsInFreePool)
+            self.assertNotIn(hostID, idsOfHostsInHostsPool)
 
     def _validateConfiguration(self, onlineHostsNotInPool=None):
         self._validateOnlineHosts()
