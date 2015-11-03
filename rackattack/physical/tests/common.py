@@ -96,20 +96,29 @@ class FreePool:
 
 
 class Allocation:
-    def __init__(self, freePool, nice):
+    def __init__(self, allocated, freePool, hosts, nice):
         self._allocationInfo = api.AllocationInfo(user='test', purpose='user', nice=nice).__dict__
         self.freePool = freePool
-        self.allocatedHosts = []
+        self.hosts = hosts
+        self.allocatedHosts = list()
+        for hostStateMachine in allocated:
+            self.allocatedHosts.append(hostStateMachine)
+            hostStateMachine.setDestroyCallback(self._stateMachineSelfDestructed)
         self.isDead = None
 
     def index(self):
         return 1
 
-    def withdraw(self, ignoredMessage):
+    def _die(self, message):
         assert not self.dead()
-        self.freePool._pool += self.allocatedHosts
-        self.allocatedHosts = []
-        self.isDead = ignoredMessage
+        while self.allocatedHosts:
+            hostStateMachine = self.allocatedHosts.pop()
+            if hostStateMachine.state() != hoststatemachine.STATE_DESTROYED:
+                self.freePool.put(hostStateMachine)
+        self.isDead = message
+
+    def withdraw(self, ignoredMessage):
+        self._die(ignoredMessage)
 
     def dead(self):
         return self.isDead
@@ -119,6 +128,12 @@ class Allocation:
 
     def allocationInfo(self):
         return self._allocationInfo
+
+    def _stateMachineSelfDestructed(self, stateMachine):
+        if self.dead() is not None:
+            return
+        self._die("Unable to inaugurate Host %s" % stateMachine.hostImplementation().id())
+        self.hosts.destroy(stateMachine)
 
 
 class Allocations:

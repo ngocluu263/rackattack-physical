@@ -1,4 +1,5 @@
 import unittest
+import mock
 from rackattack import api
 from rackattack.common import globallock
 from rackattack.physical.alloc import priority
@@ -9,6 +10,7 @@ class Test(unittest.TestCase):
     def setUp(self):
         globallock._lock.acquire()
         self.freePool = FreePool()
+        self.hostsStateMachines = mock.Mock()
         self.allocationInfo = api.AllocationInfo(user='test', purpose='user', nice=0.5).__dict__
         self.allocations = []
         self.requirements = {}
@@ -35,9 +37,9 @@ class Test(unittest.TestCase):
         self.assertEquals(len(self.freePool._pool), 0)
 
     def test_AllocateOneByWithdrawingAnAllocation(self):
-        self.allocations.append(Allocation(self.freePool, 0.9))
         stateMachine = self._generateStateMachine('host1')
-        self.allocations[0].allocatedHosts.append(stateMachine)
+        allocated = [stateMachine]
+        self.allocations.append(Allocation(allocated, self.freePool, self.hostsStateMachines, 0.9))
         self.requirements['yuvu'] = 'spec'
         self.construct()
         self.assertEquals(len(self.tested.allocated()), 1)
@@ -46,17 +48,18 @@ class Test(unittest.TestCase):
         self.assertEquals(self.allocations[0].allocatedHosts, [])
 
     def test_DoesNotTakeMachinesFromHigherPriority(self):
-        self.allocations.append(Allocation(self.freePool, 0.1))
-        self.allocations[0].allocatedHosts.append(self._generateStateMachine('host1'))
+        stateMachine = self._generateStateMachine('host1')
+        allocated = [stateMachine]
+        self.allocations.append(Allocation(allocated, self.freePool, self.hostsStateMachines, 0.1))
         self.requirements['yuvu'] = 'spec'
         with self.assertRaises(priority.OutOfResourcesError):
             self.construct()
         self.assertEquals(len(self.allocations[0].allocatedHosts), 1)
 
     def test_AllocateOneFromFreePool_DontTouchExisting(self):
-        self.allocations.append(Allocation(self.freePool, 0.9))
         stateMachine = self._generateStateMachine('host1')
-        self.allocations[0].allocatedHosts.append(stateMachine)
+        allocated = [stateMachine]
+        self.allocations.append(Allocation(allocated, self.freePool, self.hostsStateMachines, 0.9))
         self.freePool._pool.append(stateMachine)
         self.requirements['yuvu'] = 'spec'
         self.construct()

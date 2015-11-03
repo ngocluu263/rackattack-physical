@@ -76,10 +76,11 @@ class Test(unittest.TestCase):
 
     def test_BringHostOfflineWhileAllocated(self, *_args):
         self._init('online_rack_conf.yaml')
-        allocation = Allocation(self.freePoolMock, nice=0)
         stateMachine = [stateMachine for stateMachine in self._hosts.all() if
                         stateMachine.hostImplementation().id() == self.HOST_THAT_WILL_BE_TAKEN_OFFLINE][0]
-        allocation.allocatedHosts.append(stateMachine)
+        self.freePoolMock.takeOut(stateMachine)
+        allocated = [stateMachine]
+        allocation = Allocation(allocated, self.freePoolMock, self._hosts, nice=0)
         self.allocationsMock.allocations.append(allocation)
         self._validateConfiguration()
         self._setRackConf('offline_rack_conf.yaml')
@@ -88,12 +89,13 @@ class Test(unittest.TestCase):
 
     def test_BringHostOfflineWhileAllocatedAndAllocationIsDead(self, *_args):
         self._init('online_rack_conf.yaml')
-        allocation = Allocation(self.freePoolMock, nice=0)
-        allocation.withdraw("Made up reason")
         stateMachine = [stateMachine for stateMachine in self._hosts.all() if
                         stateMachine.hostImplementation().id() == self.HOST_THAT_WILL_BE_TAKEN_OFFLINE][0]
-        allocation.allocatedHosts.append(stateMachine)
+        self.freePoolMock.takeOut(stateMachine)
+        allocated = [stateMachine]
+        allocation = Allocation(allocated, self.freePoolMock, self._hosts, nice=0)
         self.allocationsMock.allocations.append(allocation)
+        allocation.withdraw("Made up reason")
         self._validateConfiguration()
         self._setRackConf('offline_rack_conf.yaml')
         self.tested._reload()
@@ -150,26 +152,29 @@ class Test(unittest.TestCase):
         if exceptForIDs is None:
             exceptForIDs = []
         actualIDs = [host.hostImplementation().id() for host in self._hosts.all()]
-        expectedIDs = [host for host in self._hostsInConfiguration(state=STATES.ONLINE)
+        expectedIDs = [host for host in self._idsOfHostsInConfiguration(state=STATES.ONLINE)
                        if host not in exceptForIDs]
         self.assertItemsEqual(actualIDs, expectedIDs)
 
     def _validateOnlineHosts(self):
-        expectedOnlineHosts = self._hostsInConfiguration(state=STATES.ONLINE)
+        expectedOnlineHosts = self._idsOfHostsInConfiguration(state=STATES.ONLINE)
         actualOnlineHosts = self.tested.getOnlineHosts().keys()
         self.assertItemsEqual(expectedOnlineHosts, actualOnlineHosts)
 
     def _validateOfflineHosts(self):
-        expectedOfflineHosts = self._hostsInConfiguration(state=STATES.OFFLINE)
+        expectedOfflineHosts = self._idsOfHostsInConfiguration(state=STATES.OFFLINE)
         actualOfflineHosts = self.tested.getOfflineHosts().keys()
         self.assertItemsEqual(expectedOfflineHosts, actualOfflineHosts)
+        idsOfHostsInFreePool = [host.hostImplementation().id() for host in self.freePoolMock.all()]
+        for hostID in actualOfflineHosts:
+            self.assertNotIn(hostID, idsOfHostsInFreePool)
 
     def _validateConfiguration(self, onlineHostsNotInPool=None):
         self._validateOnlineHosts()
         self._validateOfflineHosts()
         self._validateOnlineHostsAreInHostsPool(onlineHostsNotInPool)
 
-    def _hostsInConfiguration(self, state=None):
+    def _idsOfHostsInConfiguration(self, state=None):
         configuration = yaml.load(open(config.RACK_YAML, 'rb'))
         hosts = configuration['HOSTS']
         if state is None:
