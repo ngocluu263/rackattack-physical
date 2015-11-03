@@ -104,7 +104,7 @@ class Test(unittest.TestCase):
         self._validateConfiguration()
         stateMachine = [stateMachine for stateMachine in self._hosts.all() if
                         stateMachine.hostImplementation().id() == self.HOST_THAT_WILL_BE_TAKEN_OFFLINE][0]
-        self._hosts.destroy(stateMachine)
+        stateMachine.destroy()
         destroyedID = stateMachine.hostImplementation().id()
         self._validateConfiguration(onlineHostsNotInPool=[destroyedID])
         self._setRackConf('offline_rack_conf.yaml')
