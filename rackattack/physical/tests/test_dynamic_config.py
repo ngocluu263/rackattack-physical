@@ -56,70 +56,123 @@ class Test(unittest.TestCase):
 
     def test_BringHostsOnline(self, *_args):
         self._init('offline_rack_conf.yaml')
-        self._validateConfiguration()
+        self._validateThatConfigurationMatchesActualDataStructures()
         self._setRackConf('online_rack_conf.yaml')
         self.tested._reload()
-        self._validateConfiguration()
+        self._validateThatConfigurationMatchesActualDataStructures()
 
     def test_BringOnlineHostsOfflineWhileNotAllocated(self, *_args):
         self._init('online_rack_conf.yaml')
-        self._validateConfiguration()
+        self._validateThatConfigurationMatchesActualDataStructures()
         self._setRackConf('offline_rack_conf.yaml')
         self.tested._reload()
-        self._validateConfiguration()
+        self._validateThatConfigurationMatchesActualDataStructures()
 
     def test_BringHostOfflineWhileAllocated(self, *_args):
         self._init('online_rack_conf.yaml')
-        stateMachine = [stateMachine for stateMachine in self._hosts.all() if
-                        stateMachine.hostImplementation().id() == self.HOST_THAT_WILL_BE_TAKEN_OFFLINE][0]
-        self.freePoolMock.takeOut(stateMachine)
-        allocated = {"node0": stateMachine}
-        requirements = {"node0": dict(imageHint="theCoolstLabel", imageLabel="theCoolstLabel")}
-        allocation = Allocation(index=0,
-                                requirements=requirements,
-                                allocationInfo=None,
-                                allocated=allocated,
-                                broadcaster=mock.Mock(),
-                                freePool=self.freePoolMock,
-                                hosts=self._hosts)
-        self.allocationsMock.allocations.append(allocation)
-        self._validateConfiguration()
+        self._validateThatConfigurationMatchesActualDataStructures()
+        self._allocateHost(self.HOST_THAT_WILL_BE_TAKEN_OFFLINE)
+        self._validateThatConfigurationMatchesActualDataStructures()
         self._setRackConf('offline_rack_conf.yaml')
         self.tested._reload()
-        self._validateConfiguration()
+        self._validateThatConfigurationMatchesActualDataStructures()
 
     def test_BringHostOfflineWhileAllocatedAndAllocationIsDead(self, *_args):
         self._init('online_rack_conf.yaml')
-        stateMachine = [stateMachine for stateMachine in self._hosts.all() if
-                        stateMachine.hostImplementation().id() == self.HOST_THAT_WILL_BE_TAKEN_OFFLINE][0]
-        self.freePoolMock.takeOut(stateMachine)
-        allocated = {"node0": stateMachine}
-        requirements = {"node0": dict(imageHint="theCoolstLabel", imageLabel="theCoolstLabel")}
-        allocation = Allocation(index=0,
-                                requirements=requirements,
-                                allocationInfo=None,
-                                allocated=allocated,
-                                broadcaster=mock.Mock(),
-                                freePool=self.freePoolMock,
-                                hosts=self._hosts)
-        self.allocationsMock.allocations.append(allocation)
+        allocation = self._allocateHost(self.HOST_THAT_WILL_BE_TAKEN_OFFLINE)
         allocation.withdraw("Made up reason")
-        self._validateConfiguration()
+        self._validateThatConfigurationMatchesActualDataStructures()
         self._setRackConf('offline_rack_conf.yaml')
         self.tested._reload()
-        self._validateConfiguration()
+        self._validateThatConfigurationMatchesActualDataStructures()
 
     def test_BringHostOfflineAfterDestroyed(self, *_args):
         self._init('online_rack_conf.yaml')
-        self._validateConfiguration()
-        stateMachine = [stateMachine for stateMachine in self._hosts.all() if
-                        stateMachine.hostImplementation().id() == self.HOST_THAT_WILL_BE_TAKEN_OFFLINE][0]
-        stateMachine.destroy()
-        destroyedID = stateMachine.hostImplementation().id()
-        self._validateConfiguration(onlineHostsNotInPool=[destroyedID])
+        self._validateThatConfigurationMatchesActualDataStructures()
+        hostID = self.HOST_THAT_WILL_BE_TAKEN_OFFLINE
+        self._destroyHost(hostID)
+        self._validateThatConfigurationMatchesActualDataStructures(onlineHostsNotInPool=[hostID])
         self._setRackConf('offline_rack_conf.yaml')
         self.tested._reload()
-        self._validateConfiguration()
+        self._validateThatConfigurationMatchesActualDataStructures()
+
+    def test_DetachOnlineHostWhileNotAllocated(self, *_args):
+        self._init('online_rack_conf.yaml')
+        self._validateThatConfigurationMatchesActualDataStructures()
+        self._setRackConf('detached_rack_conf.yaml')
+        self.tested._reload()
+        self._validateThatConfigurationMatchesActualDataStructures()
+
+    def test_DetachOnlineHostWhileAllocated(self, *_args):
+        self._init('online_rack_conf.yaml')
+        self._validateThatConfigurationMatchesActualDataStructures()
+        self._allocateHost(self.HOST_THAT_WILL_BE_TAKEN_OFFLINE)
+        self._validateThatConfigurationMatchesActualDataStructures()
+        self._setRackConf('detached_rack_conf.yaml')
+        self.tested._reload()
+        self._validateThatConfigurationMatchesActualDataStructures()
+
+    def test_DetachOnlineHostWhileAllocatedAndAllocationIsDead(self, *_args):
+        self._init('online_rack_conf.yaml')
+        self._validateThatConfigurationMatchesActualDataStructures()
+        allocation = self._allocateHost(self.HOST_THAT_WILL_BE_TAKEN_OFFLINE)
+        allocation.withdraw("Made up reason")
+        self._validateThatConfigurationMatchesActualDataStructures()
+        self._setRackConf('detached_rack_conf.yaml')
+        self.tested._reload()
+        self._validateThatConfigurationMatchesActualDataStructures()
+
+    def test_DetachHostAfterDestroyed(self, *_args):
+        self._init('online_rack_conf.yaml')
+        self._validateThatConfigurationMatchesActualDataStructures()
+        hostID = self.HOST_THAT_WILL_BE_TAKEN_OFFLINE
+        self._destroyHost(hostID)
+        self._validateThatConfigurationMatchesActualDataStructures(onlineHostsNotInPool=[hostID])
+        self._setRackConf('detached_rack_conf.yaml')
+        self.tested._reload()
+        self._validateThatConfigurationMatchesActualDataStructures()
+
+    def test_DetachHostAfterAllocatedAndDestroyed(self, *_args):
+        self._init('online_rack_conf.yaml')
+        self._validateThatConfigurationMatchesActualDataStructures()
+        hostID = self.HOST_THAT_WILL_BE_TAKEN_OFFLINE
+        self._allocateHost(hostID)
+        self._destroyHost(hostID)
+        self._validateThatConfigurationMatchesActualDataStructures(onlineHostsNotInPool=[hostID])
+        self._setRackConf('detached_rack_conf.yaml')
+        self.tested._reload()
+        self._validateThatConfigurationMatchesActualDataStructures()
+
+    def test_BringHostOnlineAfterDetached(self, *_args):
+        self._init('online_rack_conf.yaml')
+        self._validateThatConfigurationMatchesActualDataStructures()
+        self._setRackConf('detached_rack_conf.yaml')
+        self.tested._reload()
+        self._validateThatConfigurationMatchesActualDataStructures()
+        self._setRackConf('online_rack_conf.yaml')
+        self.tested._reload()
+        self._validateThatConfigurationMatchesActualDataStructures()
+
+    def test_DetachOfflineHost(self, *_args):
+        self._init('offline_rack_conf.yaml')
+        self._validateThatConfigurationMatchesActualDataStructures()
+        self._setRackConf('detached_rack_conf.yaml')
+        self.tested._reload()
+        self._validateThatConfigurationMatchesActualDataStructures()
+
+    def test_BringHostOfflineAfterDetached(self, *_args):
+        self._init('online_rack_conf.yaml')
+        self._validateThatConfigurationMatchesActualDataStructures()
+        self._setRackConf('detached_rack_conf.yaml')
+        self.tested._reload()
+        self._validateThatConfigurationMatchesActualDataStructures()
+        self._setRackConf('offline_rack_conf.yaml')
+        self.tested._reload()
+        self._validateThatConfigurationMatchesActualDataStructures()
+
+    def test_DetachHostAtTheBeginning(self, *_args):
+        self._init('detached_rack_conf.yaml')
+        self._validateThatConfigurationMatchesActualDataStructures()
 
     def test_addNewHostInOnlineStateDNSMasqAddHostCalled(self, *_args):
         self._init('online_rack_conf.yaml')
@@ -137,13 +190,13 @@ class Test(unittest.TestCase):
 
     def test_BringHostsOnlineFailedSinceDNSMasqAddFailed(self, *_args):
         self._init('offline_rack_conf.yaml')
-        self._validateConfiguration()
+        self._validateThatConfigurationMatchesActualDataStructures()
         self._setRackConf('online_rack_conf.yaml')
         self.dnsMasqMock.add.side_effect = AssertionError('Ignore this error')
         self.tested._reload()
         self._setRackConf('offline_rack_conf.yaml')
         self.tested._reload()
-        self._validateConfiguration()
+        self._validateThatConfigurationMatchesActualDataStructures()
 
     def test_NotPoweringOffHostsWhenReoadingYaml(self, *_args):
         origTurnOff = Host.turnOff
@@ -169,20 +222,43 @@ class Test(unittest.TestCase):
         actualOnlineHosts = self.tested.getOnlineHosts().keys()
         self.assertItemsEqual(expectedOnlineHosts, actualOnlineHosts)
 
+    def _validateStateMachineIsDestroyed(self, hostID):
+        idsOfHostsInFreePool = [host.hostImplementation().id() for host in self.freePoolMock.all()]
+        idsOfHostsInHostsPool = [host.hostImplementation().id() for host in self._hosts.all()]
+        self.assertEquals([type(_id) for _id in idsOfHostsInFreePool][0], str)
+        self.assertEquals([type(_id) for _id in idsOfHostsInHostsPool][0], str)
+        self.assertTrue(isinstance(hostID, str))
+        self.assertNotIn(hostID, idsOfHostsInFreePool)
+        self.assertNotIn(hostID, idsOfHostsInHostsPool)
+
     def _validateOfflineHosts(self):
         expectedOfflineHosts = self._idsOfHostsInConfiguration(state=STATES.OFFLINE)
-        actualOfflineHosts = self.tested.getOfflineHosts().keys()
-        self.assertItemsEqual(expectedOfflineHosts, actualOfflineHosts)
-        idsOfHostsInFreePool = [host.hostImplementation().id() for host in self.freePoolMock.all()]
-        idsOfHostsInHostsPool = [host.hostImplementation().id() for host in self.freePoolMock.all()]
-        for hostID in actualOfflineHosts:
-            self.assertNotIn(hostID, idsOfHostsInFreePool)
-            self.assertNotIn(hostID, idsOfHostsInHostsPool)
+        actualOfflineHosts = self.tested.getOfflineHosts()
+        idsOfActualOfflineHosts = actualOfflineHosts.keys()
+        self.assertItemsEqual(expectedOfflineHosts, idsOfActualOfflineHosts)
+        for hostID in idsOfActualOfflineHosts:
+            self._validateStateMachineIsDestroyed(hostID)
 
-    def _validateConfiguration(self, onlineHostsNotInPool=None):
+    def _validateDetachedHosts(self):
+        expectedDetachedHosts = self._idsOfHostsInConfiguration(state=STATES.DETACHED)
+        actualOnlineHosts = self.tested.getOnlineHosts().keys()
+        actualOfflineHosts = self.tested.getOfflineHosts().keys()
+        actualDetachedHosts = self.tested.getDetachedHosts().keys()
+        for hostID in expectedDetachedHosts:
+            self.assertNotIn(hostID, actualOnlineHosts)
+            self.assertNotIn(hostID, actualOfflineHosts)
+            self.assertIn(hostID, actualDetachedHosts)
+            self._validateStateMachineIsDestroyed(hostID)
+            for allocation in self.allocationsMock.all():
+                idsOfAllocatedHosts = [host.hostImplementation().id() for host in
+                                       allocation.allocated().values()]
+                self.assertNotIn(hostID, idsOfAllocatedHosts)
+
+    def _validateThatConfigurationMatchesActualDataStructures(self, onlineHostsNotInPool=None):
         self._validateOnlineHosts()
         self._validateOfflineHosts()
         self._validateOnlineHostsAreInHostsPool(onlineHostsNotInPool)
+        self._validateDetachedHosts()
 
     def _idsOfHostsInConfiguration(self, state=None):
         configuration = yaml.load(open(config.RACK_YAML, 'rb'))
@@ -191,6 +267,27 @@ class Test(unittest.TestCase):
             return set([host['id'] for host in hosts])
         return set([host['id'] for host in hosts if host['state'].upper() == state])
 
+    def _allocateHost(self, hostID):
+        stateMachine = [stateMachine for stateMachine in self._hosts.all() if
+                        stateMachine.hostImplementation().id() == hostID][0]
+        self.freePoolMock.takeOut(stateMachine)
+        allocated = {"node0": stateMachine}
+        requirements = {"node0": dict(imageHint="theCoolstLabel", imageLabel="theCoolstLabel")}
+        allocation = Allocation(index=0,
+                                requirements=requirements,
+                                allocationInfo=None,
+                                allocated=allocated,
+                                broadcaster=mock.Mock(),
+                                freePool=self.freePoolMock,
+                                hosts=self._hosts)
+        self.allocationsMock.allocations.append(allocation)
+        self._validateThatConfigurationMatchesActualDataStructures()
+        return allocation
+
+    def _destroyHost(self, hostID):
+        stateMachine = [stateMachine for stateMachine in self._hosts.all() if
+                        stateMachine.hostImplementation().id() == hostID][0]
+        stateMachine.destroy()
 
 if __name__ == '__main__':
     unittest.main()

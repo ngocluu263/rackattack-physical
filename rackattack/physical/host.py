@@ -13,7 +13,7 @@ class Enum(set):
             raise AttributeError
 
 
-STATES = Enum(["ONLINE", "OFFLINE"])
+STATES = Enum(["ONLINE", "OFFLINE", "DETACHED"])
 
 
 class Host:

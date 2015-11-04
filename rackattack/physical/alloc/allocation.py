@@ -93,8 +93,8 @@ class Allocation:
         logging.info("Allocation %(idx)s dies of '%(reason)s'", dict(idx=self._index, reason=reason))
         for stateMachine in list(self._waiting.values()) + list(self._inaugurated.values()):
             if stateMachine.state() == hoststatemachine.STATE_DESTROYED:
-                logging.info("State machine %(id)s was destroyed during the allocation's lifetime",
-                             dict(id=stateMachine.hostImplementation().id()))
+                logging.error("State machine %(id)s was destroyed during the allocation's lifetime",
+                              dict(id=stateMachine.hostImplementation().id()))
                 continue
             stateMachine.unassign()
             stateMachine.setDestroyCallback(None)
@@ -127,6 +127,7 @@ class Allocation:
                 self._broadcaster.allocationChangedState(self._index)
 
     def _stateMachineSelfDestructed(self, stateMachine):
+        self.detachHost(stateMachine)
         if self.dead() is not None:
             logging.warn('State machine %(id)s self destructed while allocation %(index)s is dead.', dict(
                          id=stateMachine.hostImplementation().id(), index=self._index))
@@ -144,3 +145,18 @@ class Allocation:
     def _broadcastAllocationCreation(self):
         self._broadcaster.allocationCreated(allocationID=self._index, requirements=self._requirements,
                                             allocationInfo=self._allocationInfo, allocated=self._waiting)
+
+    def _detachHostFromCollection(self, hostStateMachine, collection):
+        matchingMachines = [name for name, stateMachine in collection.iteritems()
+                            if stateMachine == hostStateMachine]
+        assert len(matchingMachines) == 1, matchingMachines
+        machineName = matchingMachines[0]
+        del collection[machineName]
+
+    def detachHost(self, hostStateMachine):
+        if hostStateMachine in self._waiting.values():
+            self._detachHostFromCollection(hostStateMachine, self._waiting)
+            if self.dead() is None:
+                assert hostStateMachine not in self._inaugurated.values()
+        elif self.dead() is None and hostStateMachine in self._inaugurated.values():
+            self._detachHostFromCollection(hostStateMachine, self._inaugurated)

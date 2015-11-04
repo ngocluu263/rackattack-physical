@@ -111,6 +111,16 @@ class IPCServer(baseipcserver.BaseIPCServer):
         hosts = self._onlineHosts() + self._offlineHosts()
         return dict(allocations=allocations, hosts=hosts)
 
+    def _detachedHosts(self):
+        return [dict(index=host.index(),
+                     id=host_id,
+                     primaryMACAddress=host.primaryMACAddress(),
+                     secondaryMACAddress=host.secondaryMACAddress(),
+                     ipAddress=host.ipAddress(),
+                     state="DETACHED",
+                     pool=host.pool())
+                for host_id, host in self._dynamicConfig.getDetachedHosts().iteritems()]
+
     def _offlineHosts(self):
         return [dict(index=host.index(),
                      id=host_id,

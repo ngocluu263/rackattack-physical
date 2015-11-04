@@ -35,6 +35,12 @@ class DynamicConfig:
         newState = hostData["state"]
         return oldState != newState
 
+    def _allocationsThatContainStateMachine(self, stateMachine):
+        allocations = self._allocations.all()
+        for allocation in allocations:
+            if stateMachine in allocation.allocated().values():
+                yield allocation
+
     def _takeHostOffline(self, hostData):
         hostInstance = self._hosts[hostData['id']]
         assert hostInstance.id() == hostData['id']
@@ -42,13 +48,11 @@ class DynamicConfig:
         self._dnsmasq.remove(hostData['primaryMAC'])
         hostInstance.turnOff()
         stateMachine = self._findStateMachine(hostInstance)
-        if stateMachine is None:
-            logging.info("'%(id)s' which is taken offline is already destroyed.", dict(id=hostData['id']))
-        else:
+        if stateMachine is not None:
             logging.info("Destroying state machine of host %(id)s", dict(id=hostData['id']))
             stateMachine.destroy()
-            for allocation in self._allocations.all():
-                if allocation.dead() is None and stateMachine in allocation.allocated().values():
+            for allocation in self._allocationsThatContainStateMachine(stateMachine):
+                if allocation.dead() is None:
                     logging.error("Allocation %(id)s is not dead although its node was killed",
                                   dict(id=allocation.index()))
                     allocation.withdraw("node %(id)s taken offline" % dict(id=hostData['id']))
@@ -69,6 +73,23 @@ class DynamicConfig:
             return
         self._startUsingHost(hostInstance)
 
+    def _detachHost(self, hostData):
+        hostID = hostData["id"]
+        hostInstance = self._hosts[hostID]
+        assert hostInstance.id() == hostID
+        hostInstance.setState(host.STATES.DETACHED)
+        stateMachine = self._findStateMachine(hostInstance)
+        if stateMachine is not None:
+            allocations = self._allocationsThatContainStateMachine(stateMachine)
+            for allocation in allocations:
+                logging.info("Detaching host %(hostID)s from allocation %(id)s...",
+                             dict(hostID=hostID, id=allocation.index()))
+                allocation.detachHost(stateMachine)
+            logging.info("Destroying state machine of host %(id)s", dict(id=hostData['id']))
+            stateMachine.destroy()
+            assert stateMachine not in self._hostsStateMachines.all()
+            assert stateMachine not in self._freePool.all()
+
     def _registeredHost(self, hostID):
         return hostID in self._hosts
 
@@ -82,6 +103,9 @@ class DynamicConfig:
             elif newState == host.STATES.ONLINE:
                 logging.info("Host %(hostID)s has been taken back online", dict(hostID=hostID))
                 self._bringHostOnline(hostData)
+            elif newState == host.STATES.DETACHED:
+                logging.info("Host %(hostID)s has been detached", dict(hostID=hostID))
+                self._detachHost(hostData)
         if "pool" in hostData:
             self._hosts[hostID].setPool(hostData["pool"])
 
@@ -143,3 +167,6 @@ class DynamicConfig:
 
     def getOnlineHosts(self):
         return self._getHostsByState(host.STATES.ONLINE)
+
+    def getDetachedHosts(self):
+        return self._getHostsByState(host.STATES.DETACHED)
