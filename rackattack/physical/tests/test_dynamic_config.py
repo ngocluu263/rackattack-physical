@@ -1,22 +1,15 @@
 import unittest
 import mock
 from mock import patch
-from rackattack.physical import ipmi
-import subprocess
 from rackattack.physical import dynamicconfig
 from rackattack.common import hosts
 from rackattack.common import dnsmasq
-from rackattack.common import globallock
 from rackattack.common import tftpboot
 from rackattack.common import inaugurate
 from rackattack.common import timer
-from rackattack.physical.alloc import freepool
-from rackattack.physical.alloc import allocations
-import io
 from rackattack.physical import config
 import os
 from rackattack.common import hoststatemachine
-from rackattack.physical.ipmi import IPMI
 import yaml
 from rackattack.physical.tests.common import HostStateMachine, Allocations, FreePool, Allocation
 from rackattack.physical.host import Host, STATES
