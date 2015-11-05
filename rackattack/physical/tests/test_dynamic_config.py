@@ -15,6 +15,10 @@ from rackattack.physical.tests.common import HostStateMachine, Allocations, Free
 from rackattack.physical.host import Host, STATES
 from rackattack.physical import reclaimhost, network
 from rackattack.physical.alloc.allocation import Allocation
+from rackattack.common.tests.mockfilesystem import enableMockedFilesystem, disableMockedFilesystem
+
+
+configurationFiles = {}
 
 
 @patch('signal.signal')
@@ -22,8 +26,23 @@ from rackattack.physical.alloc.allocation import Allocation
 @mock.patch('rackattack.physical.ipmi.IPMI')
 class Test(unittest.TestCase):
     HOST_THAT_WILL_BE_TAKEN_OFFLINE = 'rack01-server44'
+    CONFIG_FILES_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'fixtures')
+
+    @classmethod
+    def loadConfigurationFilesToMemory(cls):
+        configurationFilenames = os.listdir(cls.CONFIG_FILES_DIR)
+        for _file in configurationFilenames:
+            _filepath = os.path.join(cls.CONFIG_FILES_DIR, _file)
+            with open(_filepath) as confFile:
+                contents = confFile.read()
+            configuration = yaml.load(contents)
+            configurationFiles[_filepath] = configuration
 
     def setUp(self):
+        if not configurationFiles:
+            self.loadConfigurationFilesToMemory()
+        self.fakeFilesystem = enableMockedFilesystem(dynamicconfig)
+        self._createFakeFilesystem()
         self.dnsMasqMock = mock.Mock(spec=dnsmasq.DNSMasq)
         self.inaguratorMock = mock.Mock(spec=inaugurate.Inaugurate)
         self.tftpMock = mock.Mock(spec=tftpboot.TFTPBoot)
@@ -36,13 +55,26 @@ class Test(unittest.TestCase):
         self.freePoolMock = FreePool(self._hosts)
         hoststatemachine.HostStateMachine = HostStateMachine
         configurationFile = "etc.rackattack.physical.conf.example"
-        with open(configurationFile) as f:
-            self.conf = yaml.load(f.read())
-        network.initialize_globals(self.conf)
+        mockNetworkConf = {'NODES_SUBNET_PREFIX_LENGTH': 22, 'ALLOW_CLEARING_OF_DISK': False,
+                           'OSMOSIS_SERVER_IP': '10.0.0.26',
+                           'PUBLIC_NAT_IP': '192.168.1.2',
+                           'GATEWAY_IP': '192.168.1.2',
+                           'FIRST_IP': '192.168.1.11',
+                           'BOOTSERVER_IP': '192.168.1.1',
+                           'PUBLIC_INTERFACE': '00:1e:67:44:13:a1'}
+        network.initialize_globals(mockNetworkConf)
+
+    def tearDown(self):
+        disableMockedFilesystem(dynamicconfig)
+
+    def _createFakeFilesystem(self):
+        self.fakeFilesystem.CreateDirectory(self.CONFIG_FILES_DIR)
+        for _filename, contents in configurationFiles.iteritems():
+            contents = yaml.dump(contents)
+            self.fakeFilesystem.CreateFile(_filename, contents=contents)
 
     def _setRackConf(self, fixtureFileName):
-        config.RACK_YAML = os.path.join(os.path.dirname
-                                        (os.path.realpath(__file__)), 'fixtures', fixtureFileName)
+        config.RACK_YAML = os.path.join(self.CONFIG_FILES_DIR, fixtureFileName)
 
     def _init(self, fixtureFileName):
         self._setRackConf(fixtureFileName)
@@ -261,7 +293,7 @@ class Test(unittest.TestCase):
         self._validateDetachedHosts()
 
     def _idsOfHostsInConfiguration(self, state=None):
-        configuration = yaml.load(open(config.RACK_YAML, 'rb'))
+        configuration = configurationFiles[config.RACK_YAML]
         hosts = configuration['HOSTS']
         if state is None:
             return set([host['id'] for host in hosts])
