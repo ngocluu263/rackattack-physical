@@ -41,7 +41,7 @@ def translateSSHCredentials(index, credentials, peer):
 
 def initialize_globals(conf):
     global _NODES, NETMASK, LAST_INDEX, FIRST_IP, LAST_IP, PUBLIC_NAT_IP, GATEWAY_IP_ADDRESS, \
-            BOOTSERVER_IP_ADDRESS
+        BOOTSERVER_IP_ADDRESS
     FIRST_IP = conf["FIRST_IP"]
     prefixLength = conf["NODES_SUBNET_PREFIX_LENGTH"]
     subnet = netaddr.IPNetwork("%(firstAddr)s/%(prefixLen)s" % dict(firstAddr=FIRST_IP,
