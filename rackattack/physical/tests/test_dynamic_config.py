@@ -11,9 +11,10 @@ from rackattack.physical import config
 import os
 from rackattack.common import hoststatemachine
 import yaml
-from rackattack.physical.tests.common import HostStateMachine, Allocations, FreePool, Allocation
+from rackattack.physical.tests.common import HostStateMachine, Allocations, FreePool
 from rackattack.physical.host import Host, STATES
 from rackattack.physical import reclaimhost, network
+from rackattack.physical.alloc.allocation import Allocation
 
 
 @patch('signal.signal')
@@ -72,8 +73,15 @@ class Test(unittest.TestCase):
         stateMachine = [stateMachine for stateMachine in self._hosts.all() if
                         stateMachine.hostImplementation().id() == self.HOST_THAT_WILL_BE_TAKEN_OFFLINE][0]
         self.freePoolMock.takeOut(stateMachine)
-        allocated = [stateMachine]
-        allocation = Allocation(allocated, self.freePoolMock, self._hosts, nice=0)
+        allocated = {"node0": stateMachine}
+        requirements = {"node0": dict(imageHint="theCoolstLabel", imageLabel="theCoolstLabel")}
+        allocation = Allocation(index=0,
+                                requirements=requirements,
+                                allocationInfo=None,
+                                allocated=allocated,
+                                broadcaster=mock.Mock(),
+                                freePool=self.freePoolMock,
+                                hosts=self._hosts)
         self.allocationsMock.allocations.append(allocation)
         self._validateConfiguration()
         self._setRackConf('offline_rack_conf.yaml')
@@ -85,8 +93,15 @@ class Test(unittest.TestCase):
         stateMachine = [stateMachine for stateMachine in self._hosts.all() if
                         stateMachine.hostImplementation().id() == self.HOST_THAT_WILL_BE_TAKEN_OFFLINE][0]
         self.freePoolMock.takeOut(stateMachine)
-        allocated = [stateMachine]
-        allocation = Allocation(allocated, self.freePoolMock, self._hosts, nice=0)
+        allocated = {"node0": stateMachine}
+        requirements = {"node0": dict(imageHint="theCoolstLabel", imageLabel="theCoolstLabel")}
+        allocation = Allocation(index=0,
+                                requirements=requirements,
+                                allocationInfo=None,
+                                allocated=allocated,
+                                broadcaster=mock.Mock(),
+                                freePool=self.freePoolMock,
+                                hosts=self._hosts)
         self.allocationsMock.allocations.append(allocation)
         allocation.withdraw("Made up reason")
         self._validateConfiguration()
