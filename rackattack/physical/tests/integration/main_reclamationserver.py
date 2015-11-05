@@ -3,7 +3,7 @@ import time
 import random
 from rackattack.common import softreclaim
 from rackattack.physical.tests.integration.main import (useFakeRackConf, useFakeIPMITool,
-                                                        FAKE_REBOOTS_PIPE_NAME)
+                                                        useFakeGeneralConfiguration, FAKE_REBOOTS_PIPE_NAME)
 
 
 ORIG_SOFT_RECLAIM = softreclaim.SoftReclaim
@@ -61,6 +61,7 @@ class FakeSoftReclaim(ORIG_SOFT_RECLAIM):
 if __name__ == "__main__":
     useFakeRackConf()
     useFakeIPMITool()
+    useFakeGeneralConfiguration()
     print("Opening fake reboot manager's request fifo write end")
     global fakeRebootRequestfd
     if not os.path.exists(FAKE_REBOOTS_PIPE_NAME):

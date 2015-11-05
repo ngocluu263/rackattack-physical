@@ -1,5 +1,5 @@
 #ip of the osmosis server passed to inaugurator - should be the inside ip address of osmosis object store if possible
-OSMOSIS_SERVER_IP: 10.0.0.26
+OSMOSIS_SERVER_IP: osmosis.dc1
 # the public nat that connects the rack to your network. it is the same ip of the rackattack server if they are the same server, but they might not be.
 # if left empty, then this means that the network is routable (and not behind a NAT), so the test clients connect using their ip address in the network.
 PUBLIC_NAT_IP: 192.168.1.2

@@ -2,7 +2,8 @@ import logging
 import threading
 from rackattack.physical import pikapatch, config
 from rackattack.physical.tests.integration import fakehosts
-from rackattack.physical.tests.integration.main import useFakeRackConf, useFakeIPMITool
+from rackattack.physical.tests.integration.main import (useFakeRackConf, useFakeIPMITool,
+                                                        useFakeGeneralConfiguration)
 
 
 def configureLogging():
@@ -19,6 +20,7 @@ def configureLogging():
 if __name__ == "__main__":
     useFakeRackConf()
     useFakeIPMITool()
+    useFakeGeneralConfiguration()
     configureLogging()
     fakeHostsServer = fakehosts.FakeHosts()
     fakeHostsServer.run()

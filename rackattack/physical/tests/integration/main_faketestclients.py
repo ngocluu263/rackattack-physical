@@ -1,12 +1,13 @@
-import os
-import sys
+import yaml
 import time
 import random
 import threading
 import subprocess
 from rackattack.physical import pikapatch
 from rackattack import clientfactory
+from rackattack.physical import config
 from rackattack.api import Requirement, AllocationInfo
+from rackattack.physical.tests.integration.main import useFakeGeneralConfiguration
 
 import pika
 assert "egg" in pika.__file__
@@ -21,6 +22,9 @@ class RackattackTestClients(threading.Thread):
         super(RackattackTestClients, self).__init__()
         self._nodeBaseName = nodeBaseName
         self._client = clientfactory.factory()
+        with open(config.CONFIGURATION_FILE) as f:
+            conf = yaml.load(f.read())
+        self._osmosisServerIP = conf["OSMOSIS_SERVER_IP"]
         self._label = self._generateLabelName()
         self._nrHosts = self._getNrHosts()
         self._nrAllocatedHosts = 0
@@ -60,8 +64,10 @@ class RackattackTestClients(threading.Thread):
         self._allocations = stillAlive
 
     def _generateLabelName(self):
-        labelName = subprocess.check_output("osmosis listlabels --objectStores=oberon:1010 "
-                                            "star | head -n 1", shell=True)
+        cmd = "osmosis listlabels --objectStores=%(osmosisServerIP)s:1010 star | head -n 1" % \
+            dict(osmosisServerIP=self._osmosisServerIP)
+        print "Running %(cmd)s" % dict(cmd=cmd)
+        labelName = subprocess.check_output(cmd, shell=True)
         labelName = labelName.strip()
         return labelName
 
@@ -190,6 +196,7 @@ def main():
         free
         \tFrees the current allocation (which was created with the 'allocate' command, if such allocation
         exists."""
+    useFakeGeneralConfiguration()
     import pdb
     pdb.set_trace()
     global backgroundStressTestClient, profilingTestClient, profilingAllocation

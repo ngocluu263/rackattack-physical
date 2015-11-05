@@ -1,6 +1,14 @@
 #!/bin/bash
 
-mkdir -p /var/lib/rackattackphysical
+# Validate that there are no suspicious processes that can interfere (or that this interferes with them)
+if [[ $(ps aux | grep beam.smp | grep -v grep) ]]; then
+    echo "Please shut down all instances of RabbitMQ before running the test."
+    exit 1
+fi
+if [[ $(ps aux | grep rackattack | grep -v grep | grep -v tail | grep -v journalctl | grep -v dashboard) ]]; then
+    echo "Please shut down all instances of any Rackattack before running the test."
+    exit 1
+fi
 
 ## Cleanup
 dd if=/var/fake_reboots_pipe iflag=nonblock of=/dev/null
