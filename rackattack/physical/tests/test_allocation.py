@@ -137,25 +137,25 @@ class Test(unittest.TestCase):
         machine.assign(stateChangeCallback, None, None)
         self.validateDeathResult()
 
-    def test_detachHost(self):
+    def test_DetachHost(self):
         machine = self.allocated['node0']
         self.tested.detachHost(machine)
         self.assertNotIn(machine, self.tested.allocated().values())
 
-    def test_detachHostAfterDestroyed(self):
+    def test_DetachHostAfterDestroyed(self):
         machine = self.allocated['node0']
         self.destroyMachineByName('node0')
         self.validateDeathResult()
         self.tested.detachHost(machine)
         self.assertNotIn(machine, self.tested.allocated().values())
 
-    def test_detachHostAfterInaugurated(self):
+    def test_DetachHostAfterInaugurated(self):
         machine = self.allocated['node0']
         self.fakeInaugurationDoneForAll()
         self.tested.detachHost(machine)
         self.assertNotIn(machine, self.tested.allocated().values())
 
-    def test_detachHostAfterInauguratedAndDestroyed(self):
+    def test_DetachHostAfterInauguratedAndDestroyed(self):
         machine = self.allocated['node0']
         self.fakeInaugurationDoneForAll()
         self.assertIn(machine, self.tested.allocated().values())
@@ -166,7 +166,7 @@ class Test(unittest.TestCase):
         self.expectedAllocatedAtTheEnd.clear()
         self.validateDeathResult()
 
-    def test_destroyHostAfterDetached(self):
+    def test_DestroyHostAfterDetached(self):
         machine = self.allocated['node0']
         self.tested.detachHost(machine)
         self.assertNotIn(machine, self.tested.allocated().values())
