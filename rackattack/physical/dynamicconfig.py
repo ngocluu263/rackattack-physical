@@ -26,9 +26,6 @@ class DynamicConfig:
         with open(config.RACK_YAML) as f:
             return yaml.load(f.read())
 
-    def _isOnline(self, hostID):
-        return self._hosts[hostID].state() == host.STATES.ONLINE
-
     def _wasHostStateChanged(self, hostData):
         hostID = hostData["id"]
         oldState = self._hosts[hostID].state()
