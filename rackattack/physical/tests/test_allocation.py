@@ -24,17 +24,20 @@ class Test(unittest.TestCase):
                             node2=dict(imageHint='echo-foxtrot', imageLabel='zooloo-papa'))
         self.index = random.randint(1, sys.maxint)
         self.allocationInfo = 'This allocation has got swag.'
-        self.allocated = dict((hostName, HostStateMachine(Host(hostName)))
+        allocated = dict((hostName, HostStateMachine(Host(hostName)))
                               for hostName in requirements.keys())
-        self.originalAllocated = copy.copy(self.allocated)
-        self.expectedAllocatedAtTheEnd = copy.copy(self.allocated)
+        self.originalAllocated = copy.copy(allocated)
+        self.expectedStates = dict(allocatedButNotInaugurated=set(allocated.values()),
+                                   inaugurated=set())
+        self.expectedDestroyed = set()
+        self.expectedDetached = set()
         self.broadcaster = Publish()
-        hosts = Hosts()
-        self.freepool = FreePool(hosts)
-        for stateMachine in self.allocated.values():
-            hosts.add(stateMachine)
-        self.tested = allocation.Allocation(self.index, requirements, self.allocationInfo, self.allocated,
-                                            self.broadcaster, self.freepool, hosts)
+        self.hosts = Hosts()
+        self.freepool = FreePool(self.hosts)
+        for stateMachine in allocated.values():
+            self.hosts.add(stateMachine)
+        self.tested = allocation.Allocation(self.index, requirements, self.allocationInfo, allocated,
+                                            self.broadcaster, self.freepool, self.hosts)
 
     def tearDown(self):
         globallock._lock.release()
@@ -50,27 +53,28 @@ class Test(unittest.TestCase):
 
     def test_InauguratedWhenDone(self):
         self.fakeInaugurationDoneForAll()
-        self.assertEquals(self.expectedAllocatedAtTheEnd, self.tested.inaugurated())
-        self.assertFalse(self.allocated)
+        expected = {stateMachine.hostImplementation().id(): stateMachine for stateMachine in \
+                    self.expectedStates["inaugurated"]}
+        self.assertEquals(expected, self.tested.inaugurated())
 
     def test_Allocated(self):
-        self.assertEquals(self.allocated, self.tested.allocated())
+        self.assertEquals(self.originalAllocated, self.tested.allocated())
 
     def test_Free(self):
         self.tested.free()
         self.assertEquals(self.tested.dead(), "freed")
-        self.validateDeathResult()
+        self.validate()
 
     def test_CantFreeDeadAllocation(self):
         self.tested.free()
         self.assertEquals(self.tested.dead(), "freed")
         self.assertRaises(Exception, self.tested.free)
-        self.validateDeathResult()
+        self.validate()
 
     def test_Withdraw(self):
         self.tested.withdraw("Don't want this allocation anymore")
         self.assertEquals(self.tested.dead(), "withdrawn")
-        self.validateDeathResult()
+        self.validate()
 
     def test_HeartBeatWhenDeadDoesNothing(self):
         self.assertIsNotNone(self.currentTimer)
@@ -78,7 +82,7 @@ class Test(unittest.TestCase):
         self.assertIsNone(self.currentTimer)
         self.tested.heartbeat()
         self.assertIsNone(self.currentTimer)
-        self.validateDeathResult()
+        self.validate()
 
     def test_NotDeadForAWhileIfNotDead(self):
         self.assertFalse(self.tested.deadForAWhile())
@@ -108,26 +112,20 @@ class Test(unittest.TestCase):
     def test_HeartBeatTimeout(self):
         self.currentTimer()
         self.assertEquals(self.tested.dead(), "heartbeat timeout")
-        self.validateDeathResult()
+        self.validate()
 
     def test_DieUponSelfDestructionOfMachine(self):
         self.destroyMachineByName('node0')
         self.assertIn("Unable to inaugurate ", self.tested.dead())
-        self.validateDeathResult()
-
-    def test_NoCrashIfAllocationFindsOutAboutDestroyedStateMachineWithoutDestroyedCallback(self):
-        self.destroyMachineByName('node0', forgetCallback=True)
-        self.tested.free()
-        self.assertEquals(self.tested.dead(), "freed")
-        self.validateDeathResult()
+        self.validate()
 
     def test_NoCrashIfStateMachineSelfDestructedWhileAllocationIsDead(self):
-        machine = self.allocated['node0']
+        machine = self.originalAllocated['node0']
         destroyCallback = machine._destroyCallback
-        stateChangeCallback = self.allocated['node0']._destroyCallback
+        stateChangeCallback = self.originalAllocated['node0']._destroyCallback
         self.tested.free()
         self.assertEquals(self.tested.dead(), "freed")
-        self.validateDeathResult()
+        self.validate()
         machine.setDestroyCallback(destroyCallback)
         self.destroyMachineByName('node0')
         machine.setDestroyCallback(None)
@@ -135,47 +133,48 @@ class Test(unittest.TestCase):
         # todo: fix the following (which is a bug); The state machine should unassign in case it deetroys
         # itself.
         machine.assign(stateChangeCallback, None, None)
-        self.validateDeathResult()
+        self.validate()
 
-    def test_DetachHost(self):
-        machine = self.allocated['node0']
-        self.tested.detachHost(machine)
-        self.assertNotIn(machine, self.tested.allocated().values())
-
-    def test_DetachHostAfterDestroyed(self):
-        machine = self.allocated['node0']
-        self.destroyMachineByName('node0')
-        self.validateDeathResult()
-        self.tested.detachHost(machine)
-        self.assertNotIn(machine, self.tested.allocated().values())
+    def test_DetachHostBeforeInaugurated(self):
+        machine = self.originalAllocated['node0']
+        self.detachHost(machine)
+        self.validate()
+        self.fakeInaugurationDoneForAll()
+        self.validate()
 
     def test_DetachHostAfterInaugurated(self):
-        machine = self.allocated['node0']
+        machine = self.originalAllocated['node0']
         self.fakeInaugurationDoneForAll()
-        self.tested.detachHost(machine)
-        self.assertNotIn(machine, self.tested.allocated().values())
+        self.validate()
+        self.detachHost(machine)
+        self.validate()
 
-    def test_DetachHostAfterInauguratedAndDestroyed(self):
-        machine = self.allocated['node0']
+    def test_CannotDetachHostAfterDestroyed(self):
+        machine = self.originalAllocated['node0']
+        self.destroyMachineByName('node0')
+        self.validate()
+        self.assertRaises(Exception, self.tested.detachHost, machine)
+        self.validate()
+
+    def test_CannotDetachHostAfterInauguratedAndDestroyed(self):
+        machine = self.originalAllocated['node0']
         self.fakeInaugurationDoneForAll()
         self.assertIn(machine, self.tested.allocated().values())
         self.destroyMachineByName('node0')
-        self.assertNotIn(machine, self.tested.allocated().values())
-        self.tested.detachHost(machine)
-        self.assertNotIn(machine, self.tested.allocated().values())
-        self.expectedAllocatedAtTheEnd.clear()
-        self.validateDeathResult()
+        self.validate()
+        self.assertRaises(Exception, self.tested.detachHost, machine)
+        self.validate()
 
-    def test_DestroyHostAfterDetached(self):
-        machine = self.allocated['node0']
-        self.tested.detachHost(machine)
-        self.assertNotIn(machine, self.tested.allocated().values())
-        self.destroyMachineByName('node0')
-        self.validateDeathResult()
+    def test_CannotDetachUnAllocatedHost(self):
+        machine = HostStateMachine("whatIsThisMachine")
+        self.assertRaises(Exception, self.detachHost, machine)
 
     def fakeInaugurationDoneForAll(self):
-        for stateMachine in self.expectedAllocatedAtTheEnd.values():
+        collection = self.expectedStates["allocatedButNotInaugurated"]
+        while collection:
+            stateMachine = collection.pop()
             stateMachine.fakeInaugurationDone()
+            self.expectedStates["inaugurated"].add(stateMachine)
 
     def scheduleTimerIn(self, timeout, callback, tag):
         self.assertIs(self.currentTimer, None)
@@ -190,27 +189,96 @@ class Test(unittest.TestCase):
         self.currentTimer = None
         self.currentTimerTag = None
 
-    def validateDeathResult(self):
-        self.assertEquals(self.expectedAllocatedAtTheEnd, self.allocated)
-        freePoolStateMachines = list(self.freepool.all())
-        for stateMachine in self.allocated.values():
-            if stateMachine.isDestroyed():
-                self.assertNotIn(stateMachine, freePoolStateMachines)
-                self.assertTrue(stateMachine.isAssigned())
+    def _validateFreePool(self):
+        isDead = self.tested.dead() is not None
+        expectedHostsInFreePool = list()
+        expectedHostsNotInFreePool = list()
+        if isDead:
+            expectedHostsInFreePool = self.expectedStates["allocatedButNotInaugurated"].union(
+                    self.expectedStates["inaugurated"])
+            expectedHostsInFreePool = [host for host in expectedHostsInFreePool if \
+                                       host not in self.expectedDestroyed]
+        for stateMachine in expectedHostsInFreePool:
+            self.assertIn(stateMachine, self.freepool.all())
+        expectedHostsNotInFreePool = [stateMachine for stateMachine in self.originalAllocated.values() if \
+                                      stateMachine not in expectedHostsInFreePool]
+        for stateMachine in expectedHostsNotInFreePool:
+            self.assertNotIn(stateMachine, self.freepool.all())
+
+    def _validateInaugurated(self):
+        hosts = self.tested.inaugurated()
+        if isDead:
+            self.assertEquals(self.inaugurated(), None)
+            for stateMachine in self.expectedStates["inaugurated"]:
+                self.assertIn(stateMachine, self.freepool.all())
+        else:
+            for stateMachine in self.expectedStates["inaugurated"]:
+                hostID = stateMachine.hostImplementation().id()
+                self.assertIn(hostID, inaugurated)
+                self.assertEquals(inaugurated[hostID], stateMachine)
+
+    def _validateAllocated(self):
+        actual = self.tested.allocated()
+        expected = self.expectedStates["allocatedButNotInaugurated"]
+        isDead = self.tested.dead() is not None
+        if not isDead:
+            expected = expected.union(self.expectedStates["inaugurated"])
+        expected = {stateMachine.hostImplementation().id(): stateMachine for stateMachine in expected \
+                    if stateMachine not in self.expectedDetached}
+        self.assertEquals(expected, actual)
+
+    def _validateInaugurated(self):
+        isDead = self.tested.dead() is not None
+        if isDead:
+            self.assertRaises(AssertionError, self.tested.inaugurated)
+        else:
+            if self.tested.done():
+                expected = {stateMachine.hostImplementation().id(): stateMachine for stateMachine in \
+                            self.expectedStates["inaugurated"] if stateMachine not in self.expectedDetached}
+                self.assertEquals(self.tested.inaugurated(), expected)
             else:
-                self.assertIn(stateMachine, freePoolStateMachines)
-                self.assertFalse(stateMachine.isAssigned())
-        self.validateAllocationResourcesAreDeallocated(self.index)
+                self.assertRaises(AssertionError, self.tested.inaugurated)
 
-    def validateAllocationResourcesAreDeallocated(self, allocationID):
+    def validateAllocationResourcesAreDeallocated(self):
         self.assertIn(self.index, self.broadcaster.removedExchanges)
-        self.assertNotIn(allocationID, self.broadcaster.declaredExchanges)
+        self.assertNotIn(self.tested.index(), self.broadcaster.declaredExchanges)
 
-    def destroyMachineByName(self, name, forgetCallback=False):
-        self.originalAllocated[name].destroy(forgetCallback=forgetCallback)
-        if not forgetCallback:
-            self.expectedAllocatedAtTheEnd.pop(name)
+    def _validateDone(self):
+        isDead = self.tested.dead() is not None
+        if isDead:
+            self.assertRaises(AssertionError, self.tested.done)
+        else:
+            allowedNotToBeInaugurated = self.expectedDetached
+            expected = \
+                self.expectedStates["allocatedButNotInaugurated"].issubset(allowedNotToBeInaugurated)
+            actual = self.tested.done()
+            self.assertEquals(expected, actual)
 
+    def _validateHosts(self):
+        hosts = self.hosts.all()
+        for host in self.expectedDestroyed:
+            self.assertNotIn(host, hosts)
+        for host in self.expectedDetached:
+            self.assertNotIn(host, hosts)
+
+    def validate(self):
+        self._validateAllocated()
+        self._validateInaugurated()
+        self._validateFreePool()
+        self._validateHosts()
+        self._validateDone()
+        isDead = self.tested.dead() is not None
+        if isDead:
+            self.validateAllocationResourcesAreDeallocated()
+
+    def destroyMachineByName(self, name):
+        stateMachine = self.originalAllocated[name]
+        stateMachine.destroy()
+        self.expectedDestroyed.add(stateMachine)
+
+    def detachHost(self, machine):
+        self.tested.detachHost(machine)
+        self.expectedDetached.add(machine)
 
 if __name__ == '__main__':
     unittest.main()

@@ -76,16 +76,23 @@ class DynamicConfig:
         assert hostInstance.id() == hostID
         hostInstance.setState(host.STATES.DETACHED)
         stateMachine = self._findStateMachine(hostInstance)
-        if stateMachine is not None:
-            allocations = self._allocationsThatContainStateMachine(stateMachine)
-            for allocation in allocations:
+        if stateMachine is None:
+            logging.error("Could not find a state machine for host ID: '%(hostID)s'",
+                          dict(hostID=stateMachine))
+            return
+        allocations = self._allocationsThatContainStateMachine(stateMachine)
+        wasDetachedFromAnAllocation = False
+        for allocation in allocations:
+            if allocation.dead() is None:
                 logging.info("Detaching host %(hostID)s from allocation %(id)s...",
-                             dict(hostID=hostID, id=allocation.index()))
-                allocation.detachHost(stateMachine)
-            logging.info("Destroying state machine of host %(id)s", dict(id=hostData['id']))
+                            dict(hostID=hostID, id=allocation.index()))
+                if stateMachine in allocation.allocated().values():
+                    allocation.detachHost(stateMachine)
+                    wasDetachedFromAnAllocation = True
+        if not wasDetachedFromAnAllocation:
             stateMachine.destroy()
-            assert stateMachine not in self._hostsStateMachines.all()
-            assert stateMachine not in self._freePool.all()
+        assert stateMachine not in self._hostsStateMachines.all()
+        assert stateMachine not in self._freePool.all()
 
     def _registeredHost(self, hostID):
         return hostID in self._hosts

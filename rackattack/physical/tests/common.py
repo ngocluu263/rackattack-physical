@@ -20,10 +20,9 @@ class HostStateMachine:
     def setDestroyCallback(self, callback):
         self._destroyCallback = callback
 
-    def destroy(self, forgetCallback=False):
+    def destroy(self):
         self._state = hoststatemachine.STATE_DESTROYED
-        if not forgetCallback:
-            self._destroyCallback(self)
+        self._destroyCallback(self)
 
     def isDestroyed(self):
         return self._state == hoststatemachine.STATE_DESTROYED
@@ -73,6 +72,9 @@ class Hosts:
 
     def add(self, stateMachine):
         self._stateMachines.append(stateMachine)
+
+    def all(self):
+        return self._stateMachines
 
 
 class FreePool:

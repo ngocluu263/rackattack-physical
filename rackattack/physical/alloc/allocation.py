@@ -19,6 +19,7 @@ class Allocation:
         self._hosts = hosts
         self._waiting = allocated
         self._inaugurated = dict()
+        self._forgottenHosts = set()
         self._death = None
         self._broadcastAllocationCreation()
         for name, stateMachine in self._waiting.iteritems():
@@ -43,9 +44,8 @@ class Allocation:
         return result
 
     def done(self):
-        done = len(self._inaugurated) == len(self._requirements)
-        assert not done or len(self._waiting) == 0
-        return done
+        assert self.dead() is None
+        return not self._waiting
 
     def free(self):
         if self.dead():
@@ -93,8 +93,8 @@ class Allocation:
         logging.info("Allocation %(idx)s dies of '%(reason)s'", dict(idx=self._index, reason=reason))
         for stateMachine in list(self._waiting.values()) + list(self._inaugurated.values()):
             if stateMachine.state() == hoststatemachine.STATE_DESTROYED:
-                logging.error("State machine %(id)s was destroyed during the allocation's lifetime",
-                              dict(id=stateMachine.hostImplementation().id()))
+                logging.info("State machine %(id)s was destroyed during the allocation's lifetime",
+                             dict(id=stateMachine.hostImplementation().id()))
                 continue
             stateMachine.unassign()
             stateMachine.setDestroyCallback(None)
@@ -127,13 +127,16 @@ class Allocation:
                 self._broadcaster.allocationChangedState(self._index)
 
     def _stateMachineSelfDestructed(self, stateMachine):
-        self.detachHost(stateMachine)
+        self._hosts.destroy(stateMachine)
         if self.dead() is not None:
             logging.warn('State machine %(id)s self destructed while allocation %(index)s is dead.', dict(
                          id=stateMachine.hostImplementation().id(), index=self._index))
             return
-        self._die("Unable to inaugurate Host %s" % stateMachine.hostImplementation().id())
-        self._hosts.destroy(stateMachine)
+        if stateMachine in self._forgottenHosts:
+            logging.info("Allocation %(idx)s ignores destruction of host %(hostID)s",
+                         dict(idx=self.index(), hostID=stateMachine.hostImplementation().id()))
+        else:
+            self._die("Unable to inaugurate Host %s" % stateMachine.hostImplementation().id())
 
     def _assign(self, name, stateMachine):
         stateMachine.setDestroyCallback(self._stateMachineSelfDestructed)
@@ -153,10 +156,23 @@ class Allocation:
         machineName = matchingMachines[0]
         del collection[machineName]
 
-    def detachHost(self, hostStateMachine):
+    def _forgetAboutHost(self, hostStateMachine):
+        self._forgottenHosts.add(hostStateMachine)
         if hostStateMachine in self._waiting.values():
             self._detachHostFromCollection(hostStateMachine, self._waiting)
             if self.dead() is None:
                 assert hostStateMachine not in self._inaugurated.values()
         elif self.dead() is None and hostStateMachine in self._inaugurated.values():
             self._detachHostFromCollection(hostStateMachine, self._inaugurated)
+
+    def detachHost(self, hostStateMachine):
+        hostID = hostStateMachine.hostImplementation().id()
+        if self.dead() is not None:
+            msg = "Cannot detach a host after death (allocation #%(index)s)" % dict(index=self.index())
+            raise Exception(msg)
+        if hostStateMachine not in self.allocated().values():
+            msg = "Cannot detach host %(hostID)s from allocation #%(index)s as it's not allocated to it" \
+                % dict(index=self.index(), hostID=hostID)
+            raise Exception(msg)
+        self._forgetAboutHost(hostStateMachine)
+        hostStateMachine.destroy()
