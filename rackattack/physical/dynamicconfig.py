@@ -26,24 +26,15 @@ class DynamicConfig:
         with open(config.RACK_YAML) as f:
             return yaml.load(f.read())
 
-    def _wasHostStateChanged(self, hostData):
-        hostID = hostData["id"]
-        oldState = self._hosts[hostID].state()
-        newState = hostData["state"]
-        return oldState != newState
-
     def _allocationsThatContainStateMachine(self, stateMachine):
         allocations = self._allocations.all()
         for allocation in allocations:
             if stateMachine in allocation.allocated().values():
                 yield allocation
 
-    def _takeHostOffline(self, hostData):
+    def _takeHostOffline(self, hostData, oldState):
         hostInstance = self._hosts[hostData['id']]
         assert hostInstance.id() == hostData['id']
-        hostInstance.setState(host.STATES.OFFLINE)
-        self._dnsmasq.remove(hostData['primaryMAC'])
-        hostInstance.turnOff()
         stateMachine = self._findStateMachine(hostInstance)
         if stateMachine is not None:
             logging.info("Destroying state machine of host %(id)s", dict(id=hostData['id']))
@@ -56,11 +47,14 @@ class DynamicConfig:
             if stateMachine in self._hostsStateMachines.all():
                 logging.error("State machine was not removed from hosts pool")
                 self._hostsStateMachines.destroy(stateMachine)
+        hostInstance.turnOff()
+        if oldState == host.STATES.ONLINE:
+            self._dnsmasq.remove(hostData['primaryMAC'])
+        hostInstance.setState(host.STATES.OFFLINE)
 
     def _bringHostOnline(self, hostData):
         hostInstance = self._hosts[hostData['id']]
         assert hostInstance.id() == hostData['id']
-        hostInstance.setState(host.STATES.ONLINE)
         try:
             self._dnsmasq.add(hostData['primaryMAC'], hostInstance.ipAddress())
         except AssertionError:
@@ -68,14 +62,17 @@ class DynamicConfig:
                               "earlier update that hasn't occurred yet? In that case, try adding the host "
                               "again in a few seconds.", dict(id=hostData['id']))
             return
+        hostInstance.setState(host.STATES.ONLINE)
         self._startUsingHost(hostInstance)
 
-    def _detachHost(self, hostData):
+    def _detachHost(self, hostData, oldState):
         hostID = hostData["id"]
         hostInstance = self._hosts[hostID]
         assert hostInstance.id() == hostID
-        hostInstance.setState(host.STATES.DETACHED)
         stateMachine = self._findStateMachine(hostInstance)
+        hostInstance.setState(host.STATES.DETACHED)
+        if oldState == host.STATES.ONLINE:
+            self._dnsmasq.remove(hostData['primaryMAC'])
         if stateMachine is None:
             logging.error("Could not find a state machine for host ID: '%(hostID)s'",
                           dict(hostID=stateMachine))
@@ -99,17 +96,19 @@ class DynamicConfig:
 
     def _registeredHostConfiguration(self, hostData):
         hostID = hostData["id"]
-        if self._wasHostStateChanged(hostData):
+        oldState = self._hosts[hostID].state()
+        newState = hostData["state"]
+        if newState != oldState:
             newState = hostData["state"]
             if newState == host.STATES.OFFLINE:
                 logging.info("Host %(hostID)s has been taken offline", dict(hostID=hostID))
-                self._takeHostOffline(hostData)
+                self._takeHostOffline(hostData, oldState=oldState)
             elif newState == host.STATES.ONLINE:
                 logging.info("Host %(hostID)s has been taken back online", dict(hostID=hostID))
                 self._bringHostOnline(hostData)
             elif newState == host.STATES.DETACHED:
                 logging.info("Host %(hostID)s has been detached", dict(hostID=hostID))
-                self._detachHost(hostData)
+                self._detachHost(hostData, oldState=oldState)
         if "pool" in hostData:
             self._hosts[hostID].setPool(hostData["pool"])
 
