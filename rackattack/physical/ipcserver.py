@@ -108,7 +108,7 @@ class IPCServer(baseipcserver.BaseIPCServer):
             done=a.dead() or a.done(),
             dead=a.dead()
             ) for a in self._allocations.all()]
-        hosts = self._onlineHosts() + self._offlineHosts()
+        hosts = self._onlineHosts() + self._offlineHosts() + self._detachedHosts()
         return dict(allocations=allocations, hosts=hosts)
 
     def _detachedHosts(self):
