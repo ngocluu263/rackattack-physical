@@ -75,7 +75,7 @@ class DynamicConfig:
             self._dnsmasq.remove(hostData['primaryMAC'])
         if stateMachine is None:
             logging.error("Could not find a state machine for host ID: '%(hostID)s'",
-                          dict(hostID=stateMachine))
+                          dict(hostID=hostID))
             return
         allocations = self._allocationsThatContainStateMachine(stateMachine)
         wasDetachedFromAnAllocation = False
