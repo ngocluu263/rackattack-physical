@@ -25,7 +25,7 @@ class Test(unittest.TestCase):
         self.index = random.randint(1, sys.maxint)
         self.allocationInfo = 'This allocation has got swag.'
         allocated = dict((hostName, HostStateMachine(Host(hostName)))
-                              for hostName in requirements.keys())
+                         for hostName in requirements.keys())
         self.originalAllocated = copy.copy(allocated)
         self.expectedStates = dict(allocatedButNotInaugurated=set(allocated.values()),
                                    inaugurated=set())
@@ -53,7 +53,7 @@ class Test(unittest.TestCase):
 
     def test_InauguratedWhenDone(self):
         self.fakeInaugurationDoneForAll()
-        expected = {stateMachine.hostImplementation().id(): stateMachine for stateMachine in \
+        expected = {stateMachine.hostImplementation().id(): stateMachine for stateMachine in
                     self.expectedStates["inaugurated"]}
         self.assertEquals(expected, self.tested.inaugurated())
 
@@ -202,28 +202,16 @@ class Test(unittest.TestCase):
         expectedHostsNotInFreePool = list()
         if isDead:
             expectedHostsInFreePool = self.expectedStates["allocatedButNotInaugurated"].union(
-                    self.expectedStates["inaugurated"])
-            expectedHostsInFreePool = [host for host in expectedHostsInFreePool if \
-                                       host not in self.expectedDestroyed and \
+                self.expectedStates["inaugurated"])
+            expectedHostsInFreePool = [host for host in expectedHostsInFreePool if
+                                       host not in self.expectedDestroyed and
                                        host not in self.expectedDetached]
         for stateMachine in expectedHostsInFreePool:
             self.assertIn(stateMachine, self.freepool.all())
-        expectedHostsNotInFreePool = [stateMachine for stateMachine in self.originalAllocated.values() if \
+        expectedHostsNotInFreePool = [stateMachine for stateMachine in self.originalAllocated.values() if
                                       stateMachine not in expectedHostsInFreePool]
         for stateMachine in expectedHostsNotInFreePool:
             self.assertNotIn(stateMachine, self.freepool.all())
-
-    def _validateInaugurated(self):
-        hosts = self.tested.inaugurated()
-        if isDead:
-            self.assertEquals(self.inaugurated(), None)
-            for stateMachine in self.expectedStates["inaugurated"]:
-                self.assertIn(stateMachine, self.freepool.all())
-        else:
-            for stateMachine in self.expectedStates["inaugurated"]:
-                hostID = stateMachine.hostImplementation().id()
-                self.assertIn(hostID, inaugurated)
-                self.assertEquals(inaugurated[hostID], stateMachine)
 
     def _validateAllocated(self):
         actual = self.tested.allocated()
@@ -231,7 +219,7 @@ class Test(unittest.TestCase):
         isDead = self.tested.dead() is not None
         if not isDead:
             expected = expected.union(self.expectedStates["inaugurated"])
-        expected = {stateMachine.hostImplementation().id(): stateMachine for stateMachine in expected \
+        expected = {stateMachine.hostImplementation().id(): stateMachine for stateMachine in expected
                     if stateMachine not in self.expectedDetached}
         self.assertEquals(expected, actual)
 
@@ -241,7 +229,7 @@ class Test(unittest.TestCase):
             self.assertRaises(AssertionError, self.tested.inaugurated)
         else:
             if self.tested.done():
-                expected = {stateMachine.hostImplementation().id(): stateMachine for stateMachine in \
+                expected = {stateMachine.hostImplementation().id(): stateMachine for stateMachine in
                             self.expectedStates["inaugurated"] if stateMachine not in self.expectedDetached}
                 self.assertEquals(self.tested.inaugurated(), expected)
             else:

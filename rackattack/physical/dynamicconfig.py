@@ -85,7 +85,7 @@ class DynamicConfig:
         for allocation in allocations:
             if allocation.dead() is None:
                 logging.info("Detaching host %(hostID)s from allocation %(id)s...",
-                            dict(hostID=hostID, id=allocation.index()))
+                             dict(hostID=hostID, id=allocation.index()))
                 if stateMachine in allocation.allocated().values():
                     allocation.detachHost(stateMachine)
                     wasDetachedFromAnAllocation = True
