@@ -176,3 +176,5 @@ class Allocation:
             raise Exception(msg)
         self._forgetAboutHost(hostStateMachine)
         hostStateMachine.destroy()
+        if not self.allocated():
+            self._die("No hosts left in allocation")

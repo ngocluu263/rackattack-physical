@@ -169,6 +169,13 @@ class Test(unittest.TestCase):
         machine = HostStateMachine("whatIsThisMachine")
         self.assertRaises(Exception, self.detachHost, machine)
 
+    def test_DetachingLastHostKillsAllocation(self):
+        for machine in self.originalAllocated.values():
+            self.detachHost(machine)
+            self.validate()
+        isDead = self.tested.dead() is not None
+        self.assertTrue(isDead)
+
     def fakeInaugurationDoneForAll(self):
         collection = self.expectedStates["allocatedButNotInaugurated"]
         while collection:
@@ -197,7 +204,8 @@ class Test(unittest.TestCase):
             expectedHostsInFreePool = self.expectedStates["allocatedButNotInaugurated"].union(
                     self.expectedStates["inaugurated"])
             expectedHostsInFreePool = [host for host in expectedHostsInFreePool if \
-                                       host not in self.expectedDestroyed]
+                                       host not in self.expectedDestroyed and \
+                                       host not in self.expectedDetached]
         for stateMachine in expectedHostsInFreePool:
             self.assertIn(stateMachine, self.freepool.all())
         expectedHostsNotInFreePool = [stateMachine for stateMachine in self.originalAllocated.values() if \
@@ -261,6 +269,9 @@ class Test(unittest.TestCase):
         for host in self.expectedDetached:
             self.assertNotIn(host, hosts)
 
+    def validateAllocationIsNotEmpty(self):
+        self.assertTrue(self.tested.allocated())
+
     def validate(self):
         self._validateAllocated()
         self._validateInaugurated()
@@ -270,6 +281,8 @@ class Test(unittest.TestCase):
         isDead = self.tested.dead() is not None
         if isDead:
             self.validateAllocationResourcesAreDeallocated()
+        else:
+            self.validateAllocationIsNotEmpty()
 
     def destroyMachineByName(self, name):
         stateMachine = self.originalAllocated[name]
