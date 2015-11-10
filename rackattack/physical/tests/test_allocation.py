@@ -184,6 +184,50 @@ class Test(unittest.TestCase):
         self.fakeInaugurationDoneForAll()
         self.validate()
 
+    def test_RelaseHostAfterInaugurated(self):
+        machine = self.originalAllocated['node0']
+        self.fakeInaugurationDoneForAll()
+        self.validate()
+        self.releaseHost(machine)
+        self.validate()
+
+    def test_CannotRelaseHostAfterDestroyed(self):
+        machine = self.originalAllocated['node0']
+        self.destroyMachineByName('node0')
+        self.validate()
+        self.assertRaises(Exception, self.tested.releaseHost, machine)
+        self.validate()
+
+    def test_CannotReleaseHostAfterInauguratedAndDestroyed(self):
+        machine = self.originalAllocated['node0']
+        self.fakeInaugurationDoneForAll()
+        self.assertIn(machine, self.tested.allocated().values())
+        self.destroyMachineByName('node0')
+        self.validate()
+        self.assertRaises(Exception, self.tested.releaseHost, machine)
+        self.validate()
+
+    def test_CannotReleaseUnAllocatedHost(self):
+        machine = HostStateMachine("whatIsThisMachine")
+        self.assertRaises(Exception, self.releaseHost, machine)
+
+    def test_ReleasingLastHostKillsAllocation(self):
+        for machine in self.originalAllocated.values():
+            self.releaseHost(machine)
+            self.validate()
+        isDead = self.tested.dead() is not None
+        self.assertTrue(isDead)
+
+    def test_CannotReleaseDetachedHost(self):
+        machine = self.originalAllocated['node0']
+        self.detachHost(machine)
+        self.assertRaises(Exception, self.releaseHost, machine)
+
+    def test_CannotDetachReleasedHost(self):
+        machine = self.originalAllocated['node0']
+        self.releaseHost(machine)
+        self.assertRaises(Exception, self.detachHost, machine)
+
     def fakeInaugurationDoneForAll(self):
         collection = self.expectedStates["allocatedButNotInaugurated"]
         while collection:
@@ -211,9 +255,9 @@ class Test(unittest.TestCase):
             expectedHostsInFreePool = self.expectedStates["allocatedButNotInaugurated"].union(
                 self.expectedStates["inaugurated"]).union(self.expectedReleased)
         else:
-            expectedHostsInFreePool = self.expectedReleased 
-        expectedHostsInFreePool = [host for host in expectedHostsInFreePool if host not in \
-                                   self.expectedDestroyed and host not in self.expectedDetached]
+            expectedHostsInFreePool = self.expectedReleased
+        expectedHostsInFreePool = [host for host in expectedHostsInFreePool if host not in
+                                   self.expectedDestroyed]
         for stateMachine in expectedHostsInFreePool:
             self.assertIn(stateMachine, self.freepool.all())
         expectedHostsNotInFreePool = [stateMachine for stateMachine in self.originalAllocated.values() if
@@ -227,8 +271,7 @@ class Test(unittest.TestCase):
         isDead = self.tested.dead() is not None
         if not isDead:
             expected = expected.union(self.expectedStates["inaugurated"])
-        expected = {stateMachine.hostImplementation().id(): stateMachine for stateMachine in expected
-                    if stateMachine not in self.expectedDetached}
+        expected = {stateMachine.hostImplementation().id(): stateMachine for stateMachine in expected}
         self.assertEquals(expected, actual)
 
     def _validateInaugurated(self):
@@ -238,7 +281,7 @@ class Test(unittest.TestCase):
         else:
             if self.tested.done():
                 expected = {stateMachine.hostImplementation().id(): stateMachine for stateMachine in
-                            self.expectedStates["inaugurated"] if stateMachine not in self.expectedDetached}
+                            self.expectedStates["inaugurated"]}
                 self.assertEquals(self.tested.inaugurated(), expected)
             else:
                 self.assertRaises(AssertionError, self.tested.inaugurated)
@@ -260,10 +303,12 @@ class Test(unittest.TestCase):
 
     def _validateHosts(self):
         hosts = self.hosts.all()
-        for host in self.expectedDestroyed:
+        notExpected = self.expectedDestroyed.union(self.expectedDetached)
+        for host in notExpected:
             self.assertNotIn(host, hosts)
-        for host in self.expectedDetached:
-            self.assertNotIn(host, hosts)
+        expected = [host for host in self.originalAllocated.values() if host not in notExpected]
+        for host in expected:
+            self.assertIn(host, hosts)
 
     def validateAllocationIsNotEmpty(self):
         self.assertTrue(self.tested.allocated())
@@ -287,11 +332,15 @@ class Test(unittest.TestCase):
 
     def detachHost(self, machine):
         self.tested.detachHost(machine)
+        self._removeFromCollections(machine)
         self.expectedDetached.add(machine)
 
     def releaseHost(self, machine):
         self.tested.releaseHost(machine)
+        self._removeFromCollections(machine)
         self.expectedReleased.add(machine)
+
+    def _removeFromCollections(self, machine):
         for collection in self.expectedStates.values():
             if machine in collection:
                 collection.remove(machine)
