@@ -100,6 +100,18 @@ class IPCServer(baseipcserver.BaseIPCServer):
         else:
             self._dnsmasq.remove(stateMachine.hostImplementation().primaryMACAddress())
 
+    def cmd_node__releaseFromAllocation(self, allocationID, nodeID, peer):
+        allocation = self._allocations.byIndex(allocationID)
+        if allocation.dead() is not None:
+            logging.info("Got an invalid request to release a host from a dead allocation %(allocationID)s",
+                         dict(allocationID=allocationID))
+            raise Exception("Cannot release a host from a dead allocation")
+        stateMachine = self._findNode(allocationID, nodeID)
+        hostID = stateMachine.hostImplementation().id()
+        logging.info("Attempting to release host %(hostID)s from allocation %(allocationID)s...",
+                     dict(hostID=hostID, allocationID=allocationID))
+        allocation.releaseHost(stateMachine)
+
     def cmd_admin__queryStatus(self, peer):
         allocations = [dict(
             index=a.index(),
