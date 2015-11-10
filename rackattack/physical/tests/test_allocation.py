@@ -31,6 +31,7 @@ class Test(unittest.TestCase):
                                    inaugurated=set())
         self.expectedDestroyed = set()
         self.expectedDetached = set()
+        self.expectedReleased = set()
         self.broadcaster = Publish()
         self.hosts = Hosts()
         self.freepool = FreePool(self.hosts)
@@ -176,6 +177,13 @@ class Test(unittest.TestCase):
         isDead = self.tested.dead() is not None
         self.assertTrue(isDead)
 
+    def test_ReleaseHostBeforeInaugurated(self):
+        machine = self.originalAllocated['node0']
+        self.releaseHost(machine)
+        self.validate()
+        self.fakeInaugurationDoneForAll()
+        self.validate()
+
     def fakeInaugurationDoneForAll(self):
         collection = self.expectedStates["allocatedButNotInaugurated"]
         while collection:
@@ -198,14 +206,14 @@ class Test(unittest.TestCase):
 
     def _validateFreePool(self):
         isDead = self.tested.dead() is not None
-        expectedHostsInFreePool = list()
-        expectedHostsNotInFreePool = list()
+        expectedHostsInFreePool = set()
         if isDead:
             expectedHostsInFreePool = self.expectedStates["allocatedButNotInaugurated"].union(
-                self.expectedStates["inaugurated"])
-            expectedHostsInFreePool = [host for host in expectedHostsInFreePool if
-                                       host not in self.expectedDestroyed and
-                                       host not in self.expectedDetached]
+                self.expectedStates["inaugurated"]).union(self.expectedReleased)
+        else:
+            expectedHostsInFreePool = self.expectedReleased 
+        expectedHostsInFreePool = [host for host in expectedHostsInFreePool if host not in \
+                                   self.expectedDestroyed and host not in self.expectedDetached]
         for stateMachine in expectedHostsInFreePool:
             self.assertIn(stateMachine, self.freepool.all())
         expectedHostsNotInFreePool = [stateMachine for stateMachine in self.originalAllocated.values() if
@@ -280,6 +288,13 @@ class Test(unittest.TestCase):
     def detachHost(self, machine):
         self.tested.detachHost(machine)
         self.expectedDetached.add(machine)
+
+    def releaseHost(self, machine):
+        self.tested.releaseHost(machine)
+        self.expectedReleased.add(machine)
+        for collection in self.expectedStates.values():
+            if machine in collection:
+                collection.remove(machine)
 
 if __name__ == '__main__':
     unittest.main()

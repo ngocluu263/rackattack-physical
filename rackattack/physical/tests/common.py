@@ -43,7 +43,8 @@ class HostStateMachine:
 
     def fakeInaugurationDone(self):
         self._state = hoststatemachine.STATE_INAUGURATION_DONE
-        self._stateChangeCallback(self)
+        if self._stateChangeCallback is not None:
+            self._stateChangeCallback(self)
 
 
 class Host:

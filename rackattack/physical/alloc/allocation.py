@@ -96,9 +96,7 @@ class Allocation:
                 logging.info("State machine %(id)s was destroyed during the allocation's lifetime",
                              dict(id=stateMachine.hostImplementation().id()))
                 continue
-            stateMachine.unassign()
-            stateMachine.setDestroyCallback(None)
-            self._freePool.put(stateMachine)
+            self._returnHostToFreePool(stateMachine)
         self._inaugurated = None
         self._death = dict(when=time.time(), reason=reason)
         timer.cancelAllByTag(tag=self)
@@ -157,6 +155,14 @@ class Allocation:
         del collection[machineName]
 
     def _forgetAboutHost(self, hostStateMachine):
+        hostID = hostStateMachine.hostImplementation().id()
+        if self.dead() is not None:
+            msg = "Cannot release a host after death (allocation #%(index)s)" % dict(index=self.index())
+            raise Exception(msg)
+        if hostStateMachine not in self.allocated().values():
+            msg = "Cannot release host %(hostID)s from allocation #%(index)s as it's not allocated to it" \
+                % dict(index=self.index(), hostID=hostID)
+            raise Exception(msg)
         self._forgottenHosts.add(hostStateMachine)
         if hostStateMachine in self._waiting.values():
             self._detachHostFromCollection(hostStateMachine, self._waiting)
@@ -166,15 +172,19 @@ class Allocation:
             self._detachHostFromCollection(hostStateMachine, self._inaugurated)
 
     def detachHost(self, hostStateMachine):
-        hostID = hostStateMachine.hostImplementation().id()
-        if self.dead() is not None:
-            msg = "Cannot detach a host after death (allocation #%(index)s)" % dict(index=self.index())
-            raise Exception(msg)
-        if hostStateMachine not in self.allocated().values():
-            msg = "Cannot detach host %(hostID)s from allocation #%(index)s as it's not allocated to it" \
-                % dict(index=self.index(), hostID=hostID)
-            raise Exception(msg)
         self._forgetAboutHost(hostStateMachine)
         hostStateMachine.destroy()
         if not self.allocated():
             self._die("No hosts left in allocation")
+
+    def releaseHost(self, hostStateMachine):
+        self._forgetAboutHost(hostStateMachine)
+        assert hostStateMachine.state() != hoststatemachine.STATE_DESTROYED
+        self._returnHostToFreePool(hostStateMachine)
+        if not self.allocated():
+            self._die("No hosts left in allocation")
+
+    def _returnHostToFreePool(self, hostStateMachine):
+        hostStateMachine.unassign()
+        hostStateMachine.setDestroyCallback(None)
+        self._freePool.put(hostStateMachine)
