@@ -1,0 +1,42 @@
+HOSTS:
+- id: "rack01-server41"
+  primaryMAC: "00:1e:67:48:20:60"
+  secondaryMAC: "00:1e:67:48:20:5f"
+  ipmiLogin:
+    hostname: 10.0.0.218
+    username: root
+    password: strato
+  topology:
+    rackID: rack01
+  state: online
+- id: "rack01-server42"
+  primaryMAC: "00:1e:67:44:40:8e"
+  secondaryMAC: "00:1e:67:44:40:8d"
+  ipmiLogin:
+    hostname: 10.0.0.217
+    username: root
+    password: strato
+  topology:
+    rackID: rack01
+  state: online
+- id: "rack01-server43"
+  primaryMAC: "00:1e:67:45:6e:f1"
+  secondaryMAC: "00:1e:67:45:6e:f0"
+  ipmiLogin:
+    hostname: 10.0.0.216
+    username: root
+    password: strato
+  topology:
+    rackID: rack01
+  state: online
+- id: "rack01-server44"
+  primaryMAC: "00:1e:67:45:70:6d"
+  secondaryMAC: "00:1e:67:45:70:6c"
+  ipmiLogin:
+    hostname: 10.0.0.219
+    username: root
+    password: strato
+  topology:
+    rackID: rack01
+  state: online
+  pool: anotherPool

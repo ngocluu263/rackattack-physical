@@ -19,7 +19,7 @@ from rackattack.common.tests.mockfilesystem import enableMockedFilesystem, disab
 import netaddr
 
 
-configurationFiles = {}
+configurations = {}
 
 
 class FakeDNSMasq:
@@ -53,15 +53,15 @@ class Test(unittest.TestCase):
     @classmethod
     def loadConfigurationFilesToMemory(cls):
         configurationFilenames = os.listdir(cls.CONFIG_FILES_DIR)
-        for _file in configurationFilenames:
-            _filepath = os.path.join(cls.CONFIG_FILES_DIR, _file)
-            with open(_filepath) as confFile:
+        for filename in configurationFilenames:
+            filepath = os.path.join(cls.CONFIG_FILES_DIR, filename)
+            with open(filepath) as confFile:
                 contents = confFile.read()
             configuration = yaml.load(contents)
-            configurationFiles[_filepath] = configuration
+            configurations[filename] = configuration
 
     def setUp(self):
-        if not configurationFiles:
+        if not configurations:
             self.loadConfigurationFilesToMemory()
         self.fakeFilesystem = enableMockedFilesystem(dynamicconfig)
         self._createFakeFilesystem()
@@ -102,12 +102,9 @@ class Test(unittest.TestCase):
 
     def _createFakeFilesystem(self):
         self.fakeFilesystem.CreateDirectory(self.CONFIG_FILES_DIR)
-        for _filename, contents in configurationFiles.iteritems():
+        for _filename, contents in configurations.iteritems():
             contents = yaml.dump(contents)
             self.fakeFilesystem.CreateFile(_filename, contents=contents)
-
-    def _setRackConf(self, fixtureFileName):
-        config.RACK_YAML = os.path.join(self.CONFIG_FILES_DIR, fixtureFileName)
 
     def _normalizeState(self, state):
         return state.strip().upper()
@@ -140,17 +137,19 @@ class Test(unittest.TestCase):
                 self.expectedDNSMasq.add(hostData["primaryMAC"], address)
 
     def _reloadRackConf(self, fixtureFileName, failureExpected=False):
-        oldConfiguration = configurationFiles[config.RACK_YAML]["HOSTS"]
-        self._setRackConf(fixtureFileName)
+        oldConfiguration = configurations[config.RACK_YAML]["HOSTS"]
+        config.RACK_YAML = fixtureFileName
+        newConfiguration = None
         if not failureExpected:
-            newConfiguration = configurationFiles[config.RACK_YAML]["HOSTS"]
+            newConfiguration = configurations[config.RACK_YAML]["HOSTS"]
             self._updateExpectedDnsMasqEntriesUponReload(oldConfiguration, newConfiguration)
         self.tested._reload()
         self._validateDNSMasqEntries()
+        return newConfiguration
 
     def _init(self, fixtureFileName):
-        self._setRackConf(fixtureFileName)
-        configuration = configurationFiles[config.RACK_YAML]["HOSTS"]
+        config.RACK_YAML = fixtureFileName
+        configuration = configurations[fixtureFileName]["HOSTS"]
         self._updateExpectedDnsMasqEntriesUponLoad(configuration)
         self.tested = dynamicconfig.DynamicConfig(hosts=self._hosts,
                                                   dnsmasq=self.dnsMasqMock,
@@ -301,6 +300,24 @@ class Test(unittest.TestCase):
         finally:
             Host.turnOff = origTurnOff
 
+    def test_HostGoesToDefaultPoolIfPoolIsRemovedFromConfiguration(self, *args):
+        self._init('different_pool_rack_conf.yaml')
+        hosts = self.tested.getOnlineHosts()
+        hostWithDifferentPool = [_host for _host in configurations['different_pool_rack_conf.yaml']['HOSTS']
+                                 if _host.get("pool", Host.DEFAULT_POOL) != Host.DEFAULT_POOL][0]
+        for hostID, host in hosts.iteritems():
+            if hostID == hostWithDifferentPool["id"]:
+                expectedPool = hostWithDifferentPool["pool"]
+            else:
+                expectedPool = Host.DEFAULT_POOL
+            self.assertEquals(host.pool(), expectedPool)
+        newConfiguration = self._reloadRackConf('online_rack_conf.yaml')
+        changedHost = [host for host in newConfiguration if host['id'] == hostWithDifferentPool["id"]][0]
+        # This validates that the test configuration simulates the right condition (no 'pool' field)
+        self.assertNotIn("pool", changedHost)
+        for host in hosts.values():
+            self.assertEquals(host.pool(), Host.DEFAULT_POOL)
+
     def _validateOnlineHostsAreInHostsPool(self, exceptForIDs=None):
         if exceptForIDs is None:
             exceptForIDs = []
@@ -361,7 +378,7 @@ class Test(unittest.TestCase):
         self._validateDNSMasqEntries()
 
     def _idsOfHostsInConfiguration(self, state=None):
-        configuration = configurationFiles[config.RACK_YAML]
+        configuration = configurations[config.RACK_YAML]
         hosts = configuration['HOSTS']
         if state is None:
             return set([host['id'] for host in hosts])

@@ -96,7 +96,8 @@ class DynamicConfig:
 
     def _registeredHostConfiguration(self, hostData):
         hostID = hostData["id"]
-        oldState = self._hosts[hostID].state()
+        _host = self._hosts[hostID]
+        oldState = _host.state()
         newState = hostData["state"]
         if newState != oldState:
             newState = hostData["state"]
@@ -109,8 +110,8 @@ class DynamicConfig:
             elif newState == host.STATES.DETACHED:
                 logging.info("Host %(hostID)s has been detached", dict(hostID=hostID))
                 self._detachHost(hostData, oldState=oldState)
-        if "pool" in hostData:
-            self._hosts[hostID].setPool(hostData["pool"])
+        pool = hostData.get("pool", host.Host.DEFAULT_POOL)
+        _host.setPool(pool)
 
     def _normalizeStateCase(self, hostData):
         if "state" in hostData:
