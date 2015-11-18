@@ -230,10 +230,11 @@ class Test(unittest.TestCase):
 
     def fakeInaugurationDoneForAll(self):
         collection = self.expectedStates["allocatedButNotInaugurated"]
-        while collection:
-            stateMachine = collection.pop()
+        for stateMachine in self.originalAllocated.values():
             stateMachine.fakeInaugurationDone()
-            self.expectedStates["inaugurated"].add(stateMachine)
+            if stateMachine in collection:
+                collection.remove(stateMachine)
+                self.expectedStates["inaugurated"].add(stateMachine)
 
     def scheduleTimerIn(self, timeout, callback, tag):
         self.assertIs(self.currentTimer, None)
