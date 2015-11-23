@@ -57,16 +57,18 @@ class Test(unittest.TestCase):
         self.assertEquals(len(self.allocations[0].allocatedHosts), 1)
 
     def test_AllocateOneFromFreePool_DontTouchExisting(self):
-        stateMachine = self._generateStateMachine('host1')
-        allocated = [stateMachine]
+        stateMachineWhichIsAlreadyAllocated = self._generateStateMachine('busyHost')
+        allocated = [stateMachineWhichIsAlreadyAllocated]
         self.allocations.append(Allocation(allocated, self.freePool, self.hostsStateMachines, 0.9))
-        self.freePool.put(stateMachine)
+        stateMachineExpectedToBeAllocated = self._generateStateMachine('freeHost')
+        self.freePool.put(stateMachineExpectedToBeAllocated)
         self.requirements['yuvu'] = 'spec'
         self.construct()
         self.assertEquals(len(self.tested.allocated()), 1)
-        self.assertIs(self.tested.allocated()['yuvu'], stateMachine)
+        self.assertIs(self.tested.allocated()['yuvu'], stateMachineExpectedToBeAllocated)
         self.assertEquals(len(self.freePool.all()), 0)
         self.assertEquals(len(self.allocations[0].allocatedHosts), 1)
+        self.assertEquals(self.allocations[0].allocatedHosts[0], stateMachineWhichIsAlreadyAllocated)
 
     def _generateStateMachine(self, name):
         return HostStateMachine(Host(name))
