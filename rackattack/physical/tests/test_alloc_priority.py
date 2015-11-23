@@ -29,12 +29,12 @@ class Test(unittest.TestCase):
 
     def test_AllocateOneFromFreePool(self):
         stateMachine = self._generateStateMachine('host1')
-        self.freePool._pool.append(stateMachine)
+        self.freePool.put(stateMachine)
         self.requirements['yuvu'] = 'spec'
         self.construct()
         self.assertEquals(len(self.tested.allocated()), 1)
         self.assertIs(self.tested.allocated()['yuvu'], stateMachine)
-        self.assertEquals(len(self.freePool._pool), 0)
+        self.assertEquals(len(self.freePool.all()), 0)
 
     def test_AllocateOneByWithdrawingAnAllocation(self):
         stateMachine = self._generateStateMachine('host1')
@@ -44,7 +44,7 @@ class Test(unittest.TestCase):
         self.construct()
         self.assertEquals(len(self.tested.allocated()), 1)
         self.assertIs(self.tested.allocated()['yuvu'], stateMachine)
-        self.assertEquals(len(self.freePool._pool), 0)
+        self.assertEquals(len(self.freePool.all()), 0)
         self.assertEquals(self.allocations[0].allocatedHosts, [])
 
     def test_DoesNotTakeMachinesFromHigherPriority(self):
@@ -60,12 +60,12 @@ class Test(unittest.TestCase):
         stateMachine = self._generateStateMachine('host1')
         allocated = [stateMachine]
         self.allocations.append(Allocation(allocated, self.freePool, self.hostsStateMachines, 0.9))
-        self.freePool._pool.append(stateMachine)
+        self.freePool.put(stateMachine)
         self.requirements['yuvu'] = 'spec'
         self.construct()
         self.assertEquals(len(self.tested.allocated()), 1)
         self.assertIs(self.tested.allocated()['yuvu'], stateMachine)
-        self.assertEquals(len(self.freePool._pool), 0)
+        self.assertEquals(len(self.freePool.all()), 0)
         self.assertEquals(len(self.allocations[0].allocatedHosts), 1)
 
     def _generateStateMachine(self, name):
