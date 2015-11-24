@@ -1,7 +1,7 @@
 import collections
 
 
-Host = collections.namedtuple('Host', 'stateMachine nice allocation')
+Host = collections.namedtuple('Host', 'stateMachine allocation')
 
 
 class OutOfResourcesError(Exception):
@@ -26,15 +26,26 @@ class Priority:
         range = self._NICE.get(allocationInfo['purpose'], self._NICE['default'])
         return (range[1] - range[0]) * allocationInfo['nice'] + range[0]
 
-    def _freeAndNicer(self):
-        result = [Host(s, 1000000, None) for s in self._freePool.all()]
-        myNice = self._absoluteNice(self._allocationInfo)
-        allocations = list(self._allocations)
+    def _allocationsSortedByAscendingAge(self):
+        allocationsFromOldestToYoungest = list(self._allocations)
+        allocationsFromYoungestToOldest = reversed(allocationsFromOldestToYoungest)
+        return allocationsFromYoungestToOldest
+
+    def _allocationsStableSortedByDescendingNice(self, allocations):
+        allocations = list(allocations)
         allocations.sort(key=lambda x: -self._absoluteNice(x.allocationInfo()))
-        for allocation in self._allocations:
-            nice = self._absoluteNice(allocation.allocationInfo())
-            if nice > myNice:
-                result += [Host(s, nice, allocation) for s in allocation.allocated().values()]
+        return allocations
+
+    def _freeAndNicer(self):
+        result = [Host(s, None) for s in self._freePool.all()]
+        myNice = self._absoluteNice(self._allocationInfo)
+        allocationsFromYoungestToOldest = self._allocationsSortedByAscendingAge()
+        nicerAllocationsFromYoungestToOldest = [allocation for allocation in \
+            allocationsFromYoungestToOldest if self._absoluteNice(allocation.allocationInfo()) > myNice]
+        nicerAllocationsSortedByDescendingNiceAndByAscendingAge = \
+            self._allocationsStableSortedByDescendingNice(nicerAllocationsFromYoungestToOldest)
+        for allocation in nicerAllocationsSortedByDescendingNiceAndByAscendingAge:
+            result += [Host(s, allocation) for s in allocation.allocated().values()]
         return result
 
     def _allocate(self):
