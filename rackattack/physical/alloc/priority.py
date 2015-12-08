@@ -40,8 +40,9 @@ class Priority:
         result = [Host(s, None) for s in self._freePool.all()]
         myNice = self._absoluteNice(self._allocationInfo)
         allocationsFromYoungestToOldest = self._allocationsSortedByAscendingAge()
-        nicerAllocationsFromYoungestToOldest = [allocation for allocation in \
-            allocationsFromYoungestToOldest if self._absoluteNice(allocation.allocationInfo()) > myNice]
+        nicerAllocationsFromYoungestToOldest = \
+            [allocation for allocation in allocationsFromYoungestToOldest if
+             self._absoluteNice(allocation.allocationInfo()) > myNice]
         nicerAllocationsSortedByDescendingNiceAndByAscendingAge = \
             self._allocationsStableSortedByDescendingNice(nicerAllocationsFromYoungestToOldest)
         for allocation in nicerAllocationsSortedByDescendingNiceAndByAscendingAge:
