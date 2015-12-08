@@ -4,6 +4,7 @@ import time
 import mock
 import random
 import unittest
+from rackattack.tcp import publish
 from rackattack.common import timer
 from rackattack.common import globallock
 from rackattack.physical.alloc import allocation
@@ -32,6 +33,7 @@ class Test(unittest.TestCase):
         self.expectedDestroyed = set()
         self.expectedDetached = set()
         self.expectedReleased = set()
+        self.wasAllocationDoneAtSomePoint = False
         self.broadcaster = Publish()
         self.hosts = Hosts()
         self.freepool = FreePool(self.hosts)
@@ -184,7 +186,7 @@ class Test(unittest.TestCase):
         self.fakeInaugurationDoneForAll()
         self.validate()
 
-    def test_RelaseHostAfterInaugurated(self):
+    def test_ReleaseHostAfterInaugurated(self):
         machine = self.originalAllocated['node0']
         self.fakeInaugurationDoneForAll()
         self.validate()
@@ -228,7 +230,20 @@ class Test(unittest.TestCase):
         self.releaseHost(machine)
         self.assertRaises(Exception, self.detachHost, machine)
 
+    def test_AllocationCreationReported(self):
+        self.validateBroadcastCalls()
+
+    def test_AllocationDoneBroadcasted(self):
+        self.fakeInaugurationDoneForAll()
+        self.validateBroadcastCalls()
+
+    def test_AllocationDeathBroadcasted(self):
+        self.fakeInaugurationDoneForAll()
+        self.tested.free()
+        self.validateBroadcastCalls()
+
     def fakeInaugurationDoneForAll(self):
+        self.wasAllocationDoneAtSomePoint = True
         collection = self.expectedStates["allocatedButNotInaugurated"]
         for stateMachine in self.originalAllocated.values():
             stateMachine.fakeInaugurationDone()
@@ -287,9 +302,40 @@ class Test(unittest.TestCase):
             else:
                 self.assertRaises(AssertionError, self.tested.inaugurated)
 
-    def validateAllocationResourcesAreDeallocated(self):
-        self.assertIn(self.index, self.broadcaster.removedExchanges)
-        self.assertNotIn(self.tested.index(), self.broadcaster.declaredExchanges)
+    def validateBroadcastCalls(self):
+        expectedMethodsNames = list()
+        expectedMethodsNames.append("allocationCreated")
+        if self.wasAllocationDoneAtSomePoint:
+            expectedMethodsNames.append("allocationDone")
+        deathReason = self.tested.dead()
+        if deathReason is not None:
+            expectedMethodsNames.append("allocationDied")
+            expectedMethodsNames.append("cleanupAllocationPublishResources")
+        actualCalls = \
+            [call for call in self.broadcaster.method_calls if call[0] != "allocationProviderMessage"]
+        while expectedMethodsNames:
+            expectedMethodName = expectedMethodsNames.pop(0)
+            actualCall = actualCalls.pop(0)
+            actualMethodName = actualCall[0]
+            args = actualCall[1]
+            kwargs = actualCall[2]
+            if expectedMethodName == "allocationCreated":
+                allocationID = kwargs["allocationID"]
+                expectedAllocate = {name: self.originalAllocated[name].hostImplementation().id()
+                                    for name in self.originalAllocated}
+            elif expectedMethodName == "allocationDone":
+                allocationID = args[0]
+            elif expectedMethodName == "allocationDied":
+                allocationID = args[0]
+                reason = kwargs["reason"]
+                self.assertEquals(self.tested.dead(), reason)
+            elif expectedMethodName == "cleanupAllocationPublishResources":
+                allocationID = args[0]
+            else:
+                self.assertTrue(False)
+            self.assertEquals(allocationID, self.tested.index())
+            self.assertEquals(actualMethodName, expectedMethodName)
+        self.assertFalse(actualCalls)
 
     def _validateDone(self):
         isDead = self.tested.dead() is not None
@@ -321,10 +367,9 @@ class Test(unittest.TestCase):
         self._validateHosts()
         self._validateDone()
         isDead = self.tested.dead() is not None
-        if isDead:
-            self.validateAllocationResourcesAreDeallocated()
-        else:
+        if not isDead:
             self.validateAllocationIsNotEmpty()
+        self.validateBroadcastCalls()
 
     def destroyMachineByName(self, name):
         stateMachine = self.originalAllocated[name]

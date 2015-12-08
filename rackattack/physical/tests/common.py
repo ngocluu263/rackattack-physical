@@ -2,6 +2,7 @@ import time
 import mock
 import pika
 from rackattack import api
+from rackattack.tcp import publish
 from rackattack.common import hoststatemachine
 
 
@@ -158,29 +159,7 @@ def executeCodeWhileAllocationIsDeadOfHeartbeatTimeout(_allocation, callback):
         time.time = orig_time
 
 
-class Publish:
-    def __init__(self):
-        self.removedExchanges = set()
-        self.declaredExchanges = set()
-
-    def allocationChangedState(self, allocationID):
-        assert allocationID not in self.removedExchanges
-        self.declaredExchanges.add(allocationID)
-
-    def cleanupAllocationPublishResources(self, allocationID):
-        self.declaredExchanges.remove(allocationID)
-        self.removedExchanges.add(allocationID)
-
-    def allocationProviderMessage(self, allocationID, message):
-        assert allocationID not in self.removedExchanges
-        self.declaredExchanges.add(allocationID)
-
-    def allocationWithdraw(self, allocationID, message):
-        assert allocationID not in self.removedExchanges
-        self.declaredExchanges.add(allocationID)
-
-    def allocationRequested(self, requirements, allocationInfo):
-        pass
-
-    def allocationCreated(self, allocationID, requirements, allocationInfo, allocated):
-        pass
+def Publish():
+    fakePublish = mock.create_autospec(publish.Publish)
+    fakePublishInstance = fakePublish("amqp://guest:guest@localhost:1234")
+    return fakePublish

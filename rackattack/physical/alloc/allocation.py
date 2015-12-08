@@ -52,9 +52,8 @@ class Allocation:
             raise Exception("Cant free allocation: its already dead: '%s'" % self._death['reason'])
         self._die("freed")
 
-    def withdraw(self, message):
-        self._broadcaster.allocationWithdraw(self._index, message)
-        self._die("withdrawn")
+    def withdraw(self, moreInfo):
+        self._die("withdrawn", moreInfo=moreInfo)
 
     def heartbeat(self):
         if self.dead():
@@ -88,7 +87,7 @@ class Allocation:
     def _heartbeatTimeout(self):
         self._die("heartbeat timeout")
 
-    def _die(self, reason):
+    def _die(self, reason, moreInfo=None):
         assert not self.dead()
         logging.info("Allocation %(idx)s dies of '%(reason)s'", dict(idx=self._index, reason=reason))
         for stateMachine in list(self._waiting.values()) + list(self._inaugurated.values()):
@@ -100,7 +99,7 @@ class Allocation:
         self._inaugurated = None
         self._death = dict(when=time.time(), reason=reason)
         timer.cancelAllByTag(tag=self)
-        self._broadcaster.allocationChangedState(self._index)
+        self._broadcaster.allocationDied(self._index, reason=reason, message=moreInfo)
         self._broadcaster.cleanupAllocationPublishResources(self._index)
         logging.info("Allocation %(idx)s died.", dict(idx=self._index))
 
@@ -122,7 +121,7 @@ class Allocation:
                              dict(name=name, waiting=self._waiting, inaugurated=self._inaugurated,
                                   hostID=stateMachine.hostImplementation().id()))
             if self.done():
-                self._broadcaster.allocationChangedState(self._index)
+                self._broadcaster.allocationDone(self._index)
 
     def _stateMachineSelfDestructed(self, stateMachine):
         self._hosts.destroy(stateMachine)
@@ -144,8 +143,7 @@ class Allocation:
             imageHint=self._requirements[name]['imageHint'])
 
     def _broadcastAllocationCreation(self):
-        self._broadcaster.allocationCreated(allocationID=self._index, requirements=self._requirements,
-                                            allocationInfo=self._allocationInfo, allocated=self._waiting)
+        self._broadcaster.allocationCreated(allocationID=self._index, allocated=self._waiting)
 
     def _detachHostFromCollection(self, hostStateMachine, collection):
         matchingMachines = [name for name, stateMachine in collection.iteritems()
