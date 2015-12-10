@@ -21,9 +21,13 @@ class Allocations:
         assert globallock.assertLocked()
         self._cleanup()
         self._verifyLabelsExistsInOsmosis([r['imageLabel'] for r in requirements.values()])
-        priorityInstance = priority.Priority(
-            requirements=requirements, allocationInfo=allocationInfo,
-            freePool=self._freePool, allocations=self._allocations)
+        try:
+            priorityInstance = priority.Priority(
+                requirements=requirements, allocationInfo=allocationInfo,
+                freePool=self._freePool, allocations=self._allocations)
+        except priority.OutOfResourcesError:
+            self._broadcaster.allocationRejected(reason="noResources")
+            raise
         allocated = priorityInstance.allocated()
         try:
             alloc = allocation.Allocation(
@@ -34,6 +38,7 @@ class Allocations:
             logging.error("Creating allocation fails, freeing up all allocated hosts")
             for allocated in allocated.values():
                 self._freePool.put(allocated)
+            self._broadcaster.allocationRejected(reason="unknown")
             raise
         self._allocations.append(alloc)
         self._index += 1
@@ -64,4 +69,5 @@ class Allocations:
                 "osmosis", "listlabels", label, "--objectStores", self._osmosisServer + ":1010"]).strip()
             existingLabels = existingLabels.splitlines()
             if label not in existingLabels:
+                self._broadcaster.allocationRejected(reason="labelDoesNotExist")
                 raise Exception("Label '%s' does not exist on object store" % label)
