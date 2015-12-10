@@ -19,7 +19,8 @@ STATES = Enum(["ONLINE", "OFFLINE", "DETACHED"])
 class Host:
     DEFAULT_POOL = "default"
 
-    def __init__(self, index, id, ipmiLogin, primaryMAC, secondaryMAC, topology, state, pool=None):
+    def __init__(self, index, id, ipmiLogin, primaryMAC, secondaryMAC, topology, state, pool=None,
+                 targetDevice=None):
         self._index = index
         self._id = id
         self._ipmiLogin = ipmiLogin
@@ -34,6 +35,7 @@ class Host:
         self._ipmi = ipmi.IPMI(**ipmiLogin)
         self._sol = None
         self._solFilename = None
+        self._targetDevice = targetDevice
 
     def index(self):
         return self._index
@@ -108,3 +110,6 @@ class Host:
     def setState(self, state):
         assert state in STATES, state
         self._state = state
+
+    def targetDevice(self):
+        return self._targetDevice

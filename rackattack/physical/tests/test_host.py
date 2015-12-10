@@ -44,6 +44,7 @@ class Test(unittest.TestCase):
         self.assertEquals(rootCredentials['hostname'], self.tested.ipAddress())
         self.assertEquals(self.ipmiLogin, self.tested.ipmiLoginCredentials())
         self.assertEquals("thePool", self.tested.pool())
+        self.assertEquals(None, self.tested.targetDevice())
 
     def test_DestroyDoesNotRaiseAnException(self):
         self.tested.destroy()
