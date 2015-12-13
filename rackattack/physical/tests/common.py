@@ -3,7 +3,9 @@ import mock
 import pika
 from rackattack import api
 from rackattack.tcp import publish
+from rackattack.common import timer
 from rackattack.common import hoststatemachine
+from rackattack.physical.alloc import allocation
 
 
 class HostStateMachine:
@@ -99,45 +101,52 @@ class FreePool:
         self._pool.remove(hostStateMachine)
 
 
-class Allocation:
-    def __init__(self, allocated, freePool, hosts, nice):
-        self._allocationInfo = api.AllocationInfo(user='test', purpose='user', nice=nice).__dict__
-        self.freePool = freePool
-        self.hosts = hosts
-        self.allocatedHosts = list()
-        for hostStateMachine in allocated:
-            self.allocatedHosts.append(hostStateMachine)
-            hostStateMachine.setDestroyCallback(self._stateMachineSelfDestructed)
-        self.isDead = None
+nrAllocations = 0
 
-    def index(self):
-        return 1
 
-    def _die(self, message):
-        assert not self.dead()
-        while self.allocatedHosts:
-            hostStateMachine = self.allocatedHosts.pop()
-            if hostStateMachine.state() != hoststatemachine.STATE_DESTROYED:
-                self.freePool.put(hostStateMachine)
-        self.isDead = message
+def Allocation(allocated, freePool, hosts, nice):
 
-    def withdraw(self, ignoredMessage):
-        self._die(ignoredMessage)
+    currentTimer = None
+    currentTimerTag = None
 
-    def dead(self):
-        return self.isDead
+    def scheduleTimerIn(timeout, callback, tag):
+        global currentTimer, currentTimerTag
+        assert currentTimer is None
+        assert currentTimerTag is tag
+        currentTimer = callback
+        currentTimerTag = tag
 
-    def allocated(self):
-        return {str(x): x for x in self.allocatedHosts}
+    def cancelAllTimersByTag(tag):
+        global currentTimer, currentTimerTag
+        if currentTimerTag is not None:
+            assert currentTimer is not None
+            assert currentTimerTag is tag
+        currentTimer = None
+        currentTimerTag = None
 
-    def allocationInfo(self):
-        return self._allocationInfo
+    def mockTimer():
+        timer.scheduleIn = mock.Mock()
+        timer.cancelAllByTag = mock.Mock()
 
-    def _stateMachineSelfDestructed(self, stateMachine):
-        if self.dead() is not None:
-            return
-        self._die("Unable to inaugurate Host %s" % stateMachine.hostImplementation().id())
-        self.hosts.destroy(stateMachine)
+    broadcaster = mock.Mock()
+    allocatedDict = dict()
+    for idx, host in enumerate(allocated):
+        allocatedDict["yuvu%d" % (idx)] = host
+    requirements = dict()
+    for idx, host in enumerate(allocated):
+        requirements["yuvu%d" % (idx)] = dict(imageLabel="someLabel", imageHint="someLabel")
+    allocationInfo = dict(nice=nice, purpose="user")
+    global nrAllocations
+    mockTimer()
+    fakeAllocation = allocation.Allocation(nrAllocations,
+                                           requirements=requirements,
+                                           allocationInfo=allocationInfo,
+                                           allocated=allocatedDict,
+                                           broadcaster=broadcaster,
+                                           freePool=freePool,
+                                           hosts=hosts)
+    nrAllocations += 1
+    return fakeAllocation
 
 
 class Allocations:

@@ -27,9 +27,10 @@ class Priority:
         return (range[1] - range[0]) * allocationInfo['nice'] + range[0]
 
     def _allocationsSortedByAscendingAge(self):
-        allocationsFromOldestToYoungest = list(self._allocations)
-        allocationsFromYoungestToOldest = reversed(allocationsFromOldestToYoungest)
-        return allocationsFromYoungestToOldest
+        livingAllocations = [allocation for allocation in self._allocations if allocation.dead() is None]
+        livingAllocationsFromOldestToYoungest = list(livingAllocations)
+        livingAllocationsFromYoungestToOldest = reversed(livingAllocationsFromOldestToYoungest)
+        return livingAllocationsFromYoungestToOldest
 
     def _allocationsStableSortedByDescendingNice(self, allocations):
         allocations = list(allocations)
