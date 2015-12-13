@@ -112,6 +112,8 @@ class DynamicConfig:
                 self._detachHost(hostData, oldState=oldState)
         pool = hostData.get("pool", host.Host.DEFAULT_POOL)
         _host.setPool(pool)
+        targetDevice = hostData.get("targetDevice", host.Host.DEFAULT_TARGET_DEVICE)
+        _host.setTargetDevice(targetDevice)
 
     def _normalizeStateCase(self, hostData):
         if "state" in hostData:

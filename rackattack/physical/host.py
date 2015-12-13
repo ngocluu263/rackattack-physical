@@ -18,6 +18,7 @@ STATES = Enum(["ONLINE", "OFFLINE", "DETACHED"])
 
 class Host:
     DEFAULT_POOL = "default"
+    DEFAULT_TARGET_DEVICE = None
 
     def __init__(self, index, id, ipmiLogin, primaryMAC, secondaryMAC, topology, state, pool=None,
                  targetDevice=None):
@@ -35,6 +36,8 @@ class Host:
         self._ipmi = ipmi.IPMI(**ipmiLogin)
         self._sol = None
         self._solFilename = None
+        if targetDevice is None:
+            targetDevice = self.DEFAULT_TARGET_DEVICE
         self._targetDevice = targetDevice
 
     def index(self):
@@ -113,3 +116,9 @@ class Host:
 
     def targetDevice(self):
         return self._targetDevice
+
+    def setTargetDevice(self, targetDevice):
+        if targetDevice != self._targetDevice:
+            logging.info("Changing targat device of %(hostID)s from %(old)s to %(new)s",
+                         dict(hostID=self._id, old=self._targetDevice, new=targetDevice))
+            self._targetDevice = targetDevice

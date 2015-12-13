@@ -335,6 +335,27 @@ class Test(unittest.TestCase):
         for host in hosts.values():
             self.assertEquals(host.pool(), Host.DEFAULT_POOL)
 
+    def test_HostGoesToDefaultTargetDeviceIfFieldIsRemovedFromConfiguration(self, *args):
+        self._init('different_target_device_rack_conf.yaml')
+        hosts = self.tested.getOnlineHosts()
+        hostWithDifferentTargetDevice = [_host for _host in
+                                         configurations['different_target_device_rack_conf.yaml']['HOSTS']
+                                         if _host.get("targetDevice", Host.DEFAULT_TARGET_DEVICE) !=
+                                         Host.DEFAULT_TARGET_DEVICE][0]
+        for hostID, host in hosts.iteritems():
+            if hostID == hostWithDifferentTargetDevice["id"]:
+                expectedTargetDevice = hostWithDifferentTargetDevice["targetDevice"]
+            else:
+                expectedTargetDevice = Host.DEFAULT_TARGET_DEVICE
+            self.assertEquals(host.targetDevice(), expectedTargetDevice)
+        newConfiguration = self._reloadRackConf('online_rack_conf.yaml')
+        changedHost = [host for host in newConfiguration if host['id'] ==
+                       hostWithDifferentTargetDevice["id"]][0]
+        # This validates that the test configuration simulates the right condition (no 'TargetDevice' field)
+        self.assertNotIn("targetDevice", changedHost)
+        for host in hosts.values():
+            self.assertEquals(host.targetDevice(), Host.DEFAULT_TARGET_DEVICE)
+
     def _validateOnlineHostsAreInHostsPool(self, exceptForIDs=None):
         if exceptForIDs is None:
             exceptForIDs = []
