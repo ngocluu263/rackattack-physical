@@ -1,5 +1,6 @@
 import unittest
 import mock
+import contextlib
 from mock import patch
 from rackattack.physical import dynamicconfig
 from rackattack.common import hosts
@@ -7,13 +8,15 @@ from rackattack.common import dnsmasq
 from rackattack.common import tftpboot
 from rackattack.common import inaugurate
 from rackattack.common import timer
+from rackattack.common import globallock
 from rackattack.physical import config
 import os
 from rackattack.common import hoststatemachine
 import yaml
-from rackattack.physical.tests.common import HostStateMachine, Allocations, FreePool
+from rackattack.physical.tests.common import HostStateMachine, Allocations
 from rackattack.physical.host import Host, STATES
 from rackattack.physical import reclaimhost, network
+from rackattack.physical.alloc import freepool
 from rackattack.physical.alloc.allocation import Allocation
 from rackattack.common.tests.mockfilesystem import enableMockedFilesystem, disableMockedFilesystem
 import netaddr
@@ -61,6 +64,8 @@ class Test(unittest.TestCase):
             configurations[filename] = configuration
 
     def setUp(self):
+        self.addCleanup(self.releaseLock)
+        globallock._lock.acquire()
         if not configurations:
             self.loadConfigurationFilesToMemory()
         self.fakeFilesystem = enableMockedFilesystem(dynamicconfig)
@@ -85,12 +90,22 @@ class Test(unittest.TestCase):
         timer.scheduleIn = mock.Mock()
         self._hosts = hosts.Hosts()
         self.expectedAddresses = dict()
-        self.freePoolMock = FreePool(self._hosts)
+        self.freePool = freepool.FreePool(self._hosts)
         hoststatemachine.HostStateMachine = HostStateMachine
         network.initialize_globals(mockNetworkConf)
 
     def tearDown(self):
         disableMockedFilesystem(dynamicconfig)
+
+    def releaseLock(self):
+        globallock._lock.release()
+
+    @staticmethod
+    @contextlib.contextmanager
+    def unlock():
+        globallock._lock.release()
+        yield
+        globallock._lock.acquire()
 
     def _loadAddresses(self, firstIP, prefixLength):
         subnet = netaddr.IPNetwork("%(firstAddr)s/%(prefixLen)s" % dict(firstAddr=firstIP,
@@ -143,7 +158,8 @@ class Test(unittest.TestCase):
         if not failureExpected:
             newConfiguration = configurations[config.RACK_YAML]["HOSTS"]
             self._updateExpectedDnsMasqEntriesUponReload(oldConfiguration, newConfiguration)
-        self.tested._reload()
+        with self.unlock():
+            self.tested._reload()
         self._validateDNSMasqEntries()
         return newConfiguration
 
@@ -151,13 +167,14 @@ class Test(unittest.TestCase):
         config.RACK_YAML = fixtureFileName
         configuration = configurations[fixtureFileName]["HOSTS"]
         self._updateExpectedDnsMasqEntriesUponLoad(configuration)
-        self.tested = dynamicconfig.DynamicConfig(hosts=self._hosts,
-                                                  dnsmasq=self.dnsMasqMock,
-                                                  inaugurate=self.inaguratorMock,
-                                                  tftpboot=self.tftpMock,
-                                                  freePool=self.freePoolMock,
-                                                  allocations=self.allocationsMock,
-                                                  reclaimHost=self.reclaimHost)
+        with self.unlock():
+            self.tested = dynamicconfig.DynamicConfig(hosts=self._hosts,
+                                                      dnsmasq=self.dnsMasqMock,
+                                                      inaugurate=self.inaguratorMock,
+                                                      tftpboot=self.tftpMock,
+                                                      freePool=self.freePool,
+                                                      allocations=self.allocationsMock,
+                                                      reclaimHost=self.reclaimHost)
 
     def test_BringHostsOnline(self, *_args):
         self._init('offline_rack_conf.yaml')
@@ -332,7 +349,7 @@ class Test(unittest.TestCase):
         self.assertItemsEqual(expectedOnlineHosts, actualOnlineHosts)
 
     def _validateStateMachineIsDestroyed(self, hostID):
-        idsOfHostsInFreePool = [host.hostImplementation().id() for host in self.freePoolMock.all()]
+        idsOfHostsInFreePool = [host.hostImplementation().id() for host in self.freePool.all()]
         idsOfHostsInHostsPool = [host.hostImplementation().id() for host in self._hosts.all()]
         self.assertEquals([type(_id) for _id in idsOfHostsInFreePool][0], str)
         self.assertEquals([type(_id) for _id in idsOfHostsInHostsPool][0], str)
@@ -387,7 +404,7 @@ class Test(unittest.TestCase):
     def _allocateHost(self, hostID):
         stateMachine = [stateMachine for stateMachine in self._hosts.all() if
                         stateMachine.hostImplementation().id() == hostID][0]
-        self.freePoolMock.takeOut(stateMachine)
+        self.freePool.takeOut(stateMachine)
         allocated = {"node0": stateMachine}
         requirements = {"node0": dict(imageHint="theCoolstLabel", imageLabel="theCoolstLabel")}
         allocation = Allocation(index=0,
@@ -395,7 +412,7 @@ class Test(unittest.TestCase):
                                 allocationInfo=None,
                                 allocated=allocated,
                                 broadcaster=mock.Mock(),
-                                freePool=self.freePoolMock,
+                                freePool=self.freePool,
                                 hosts=self._hosts)
         self.allocationsMock.allocations.append(allocation)
         self._validate()

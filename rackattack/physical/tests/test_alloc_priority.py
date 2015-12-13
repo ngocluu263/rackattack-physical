@@ -3,21 +3,24 @@ import mock
 from rackattack import api
 from rackattack.common import hosts
 from rackattack.common import globallock
+from rackattack.physical.alloc import freepool
 from rackattack.physical.alloc import priority
-from rackattack.physical.tests.common import HostStateMachine, FreePool, Allocation, Host
+from rackattack.physical.tests.common import HostStateMachine, Allocation, Host
 
 
 class Test(unittest.TestCase):
     def setUp(self):
+        self.addCleanup(self.releaseLock)
         globallock._lock.acquire()
-        self.freePool = FreePool()
+        self.hosts = hosts.Hosts()
+        self.freePool = freepool.FreePool(self.hosts)
         self.hostsStateMachines = mock.Mock()
         self.allocationInfo = api.AllocationInfo(user='test', purpose='user', nice=0.5).__dict__
         self.allocations = []
         self.requirements = {}
-        self.hosts = hosts.Hosts()
 
-    def tearDown(self):
+    @staticmethod
+    def releaseLock():
         globallock._lock.release()
 
     def construct(self):
@@ -36,7 +39,7 @@ class Test(unittest.TestCase):
         self.construct()
         self.assertEquals(len(self.tested.allocated()), 1)
         self.assertIs(self.tested.allocated()['yuvu'], stateMachine)
-        self.assertEquals(len(self.freePool.all()), 0)
+        self.assertEquals(len(list(self.freePool.all())), 0)
 
     def test_AllocateOneByWithdrawingAnAllocation(self):
         stateMachine = self._generateStateMachine('host1')
@@ -46,7 +49,7 @@ class Test(unittest.TestCase):
         self.construct()
         self.assertEquals(len(self.tested.allocated()), 1)
         self.assertIs(self.tested.allocated()['yuvu'], stateMachine)
-        self.assertEquals(len(self.freePool.all()), 0)
+        self.assertEquals(len(list(self.freePool.all())), 0)
         self.assertIsNotNone(self.allocations[0].dead())
 
     def test_DoesNotTakeMachinesFromHigherPriority(self):
@@ -68,7 +71,7 @@ class Test(unittest.TestCase):
         self.construct()
         self.assertEquals(len(self.tested.allocated()), 1)
         self.assertIs(self.tested.allocated()['yuvu'], stateMachineExpectedToBeAllocated)
-        self.assertEquals(len(self.freePool.all()), 0)
+        self.assertEquals(len(list(self.freePool.all())), 0)
         self.assertEquals(len(self.allocations[0].allocated()), 1)
         self.assertEquals(self.allocations[0].allocated()['yuvu0'], stateMachineWhichIsAlreadyAllocated)
 
@@ -94,7 +97,7 @@ class Test(unittest.TestCase):
         self.construct()
         self.assertEquals(len(self.tested.allocated()), 1)
         self.assertIs(self.tested.allocated()['yuvu'], machineExpectedToBePreempted)
-        self.assertEquals(len(self.freePool.all()), 0)
+        self.assertEquals(len(list(self.freePool.all())), 0)
         self.assertIsNotNone(allocationExpectedToBePreempted.dead())
         for idx, allocation in enumerate(self.allocations):
             if allocation == allocationExpectedToBePreempted:
@@ -109,13 +112,13 @@ class Test(unittest.TestCase):
         self.allocations.append(allocationNotToTakeHostsFrom)
         allocationNotToTakeHostsFrom.withdraw("some reason")
         self.assertIsNotNone(self.allocations[0].dead())
-        self.assertEquals(self.freePool.all()[0], stateMachine)
-        self.assertEquals(len(self.freePool.all()), 1)
+        self.assertEquals(list(self.freePool.all())[0], stateMachine)
+        self.assertEquals(len(list(self.freePool.all())), 1)
         self.requirements['yuvu1'] = 'spec'
         self.requirements['yuvu2'] = 'spec'
         with self.assertRaises(priority.OutOfResourcesError):
             self.construct()
-        self.assertEquals(len(self.freePool.all()), 1)
+        self.assertEquals(len(list(self.freePool.all())), 1)
         self.assertIsNotNone(self.allocations[0].dead())
 
     def _generateStateMachine(self, name):

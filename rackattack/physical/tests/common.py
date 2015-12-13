@@ -81,26 +81,6 @@ class Hosts:
         return self._stateMachines
 
 
-class FreePool:
-    def __init__(self, hosts=None):
-        self._pool = []
-        self._hosts = hosts
-
-    def all(self):
-        return self._pool
-
-    def takeOut(self, stateMachine):
-        self._pool.remove(stateMachine)
-
-    def put(self, hostStateMachine):
-        self._pool.append(hostStateMachine)
-        hostStateMachine.setDestroyCallback(self._hostSelfDestructed)
-
-    def _hostSelfDestructed(self, hostStateMachine):
-        self._hosts.destroy(hostStateMachine)
-        self._pool.remove(hostStateMachine)
-
-
 nrAllocations = 0
 
 

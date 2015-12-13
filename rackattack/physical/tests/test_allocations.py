@@ -4,9 +4,9 @@ import unittest
 from rackattack.virtual import sh
 from rackattack.common import timer
 from rackattack.common import globallock
-from rackattack.physical.alloc import allocation, priority
+from rackattack.physical.alloc import allocation, priority, freepool
 from rackattack.physical.alloc.allocations import Allocations
-from rackattack.physical.tests.common import (Host, HostStateMachine, FreePool, Hosts, FreePool, Publish,
+from rackattack.physical.tests.common import (Host, HostStateMachine, Hosts, Publish,
                                               executeCodeWhileAllocationIsDeadOfHeartbeatTimeout)
 
 
@@ -22,7 +22,7 @@ class Test(unittest.TestCase):
         self.broadcaster = Publish()
         hostNames = ["alpha", "bravo", "charlie", "delta"]
         self.hosts = Hosts()
-        self.freePool = FreePool(self.hosts)
+        self.freePool = freepool.FreePool(self.hosts)
         self.osmosisServer = 'what-a-cool-osmosis-server'
         self.allocationInfo = dict(purpose='forfun', nice=0)
         timer.scheduleIn = mock.Mock()
@@ -135,13 +135,13 @@ class Test(unittest.TestCase):
                                     node3=dict(imageLabel="kilo-lima", imageHint="mike"),
                                     node4=dict(imageLabel="november-oscar", imageHint="papa"),
                                     node5=dict(imageLabel="quebec-romeo", imageHint="sierra"))
-        nrFreeHostsBefore = len(self.freePool.all())
+        nrFreeHostsBefore = len(list(self.freePool.all()))
         self.assertRaises(priority.OutOfResourcesError,
                           self.createAllocation,
                           tooBigOfRequirements,
                           self.allocationInfo,
                           outOfResourcesExpected=True)
-        self.assertEquals(len(self.freePool.all()), nrFreeHostsBefore)
+        self.assertEquals(len(list(self.freePool.all())), nrFreeHostsBefore)
 
     def test_AllocationCreationErrorBroadcasted(self):
         origAllocation = allocation.Allocation
@@ -171,7 +171,7 @@ class Test(unittest.TestCase):
     def createAllocation(self, requirements, allocationInfo, listLabelsMock=osmosisListLabelsFoundMock,
                          outOfResourcesExpected=False):
         origRun = sh.run
-        nrFreeHostsBefore = len(self.freePool.all())
+        nrFreeHostsBefore = len(list(self.freePool.all()))
         self.expectedRequestBroadcasts.append((requirements, allocationInfo))
         if len(requirements) > len(list(self.freePool.all())):
             self.assertTrue(outOfResourcesExpected)
@@ -184,7 +184,7 @@ class Test(unittest.TestCase):
             raise
         finally:
             sh.run = origRun
-        self.assertEquals(len(self.freePool.all()), nrFreeHostsBefore - len(requirements))
+        self.assertEquals(len(list(self.freePool.all())), nrFreeHostsBefore - len(requirements))
         return _allocation
 
     def validateRequestBroadcasts(self):
