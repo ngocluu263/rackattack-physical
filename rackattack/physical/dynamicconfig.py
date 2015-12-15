@@ -48,20 +48,20 @@ class DynamicConfig:
                 logging.error("State machine was not removed from hosts pool")
                 self._hostsStateMachines.destroy(stateMachine)
         hostInstance.turnOff()
-        if oldState == host.STATES.ONLINE:
-            self._dnsmasq.remove(hostData['primaryMAC'])
+#        if oldState == host.STATES.ONLINE:
+#            self._dnsmasq.remove(hostData['primaryMAC'])
         hostInstance.setState(host.STATES.OFFLINE)
 
     def _bringHostOnline(self, hostData):
         hostInstance = self._hosts[hostData['id']]
         assert hostInstance.id() == hostData['id']
-        try:
-            self._dnsmasq.add(hostData['primaryMAC'], hostInstance.ipAddress())
-        except AssertionError:
-            logging.exception("Failed adding host %(id)s to DNSMasq's list. Perhaps you're waiting for an "
-                              "earlier update that hasn't occurred yet? In that case, try adding the host "
-                              "again in a few seconds.", dict(id=hostData['id']))
-            return
+#        try:
+#            self._dnsmasq.add(hostData['primaryMAC'], hostInstance.ipAddress())
+#        except AssertionError:
+#            logging.exception("Failed adding host %(id)s to DNSMasq's list. Perhaps you're waiting for an "
+#                              "earlier update that hasn't occurred yet? In that case, try adding the host "
+#                              "again in a few seconds.", dict(id=hostData['id']))
+#            return
         hostInstance.setState(host.STATES.ONLINE)
         self._startUsingHost(hostInstance)
 
@@ -71,8 +71,8 @@ class DynamicConfig:
         assert hostInstance.id() == hostID
         stateMachine = self._findStateMachine(hostInstance)
         hostInstance.setState(host.STATES.DETACHED)
-        if oldState == host.STATES.ONLINE:
-            self._dnsmasq.remove(hostData['primaryMAC'])
+#        if oldState == host.STATES.ONLINE:
+#            self._dnsmasq.remove(hostData['primaryMAC'])
         if stateMachine is None:
             logging.error("Could not find a state machine for host ID: '%(hostID)s'",
                           dict(hostID=hostID))
@@ -136,8 +136,8 @@ class DynamicConfig:
         hostID = hostInstance.id()
         logging.info("Adding host %(hostID)s - %(ip)s", dict(hostID=hostID, ip=hostInstance.ipAddress()))
         state = hostInstance.state()
+        self._dnsmasq.add(hostData['primaryMAC'], hostInstance.ipAddress())
         if state == host.STATES.ONLINE:
-            self._dnsmasq.add(hostData['primaryMAC'], hostInstance.ipAddress())
             self._startUsingHost(hostInstance)
             logging.info('Host %(hostID)s added in online state', dict(hostID=hostID))
         else:

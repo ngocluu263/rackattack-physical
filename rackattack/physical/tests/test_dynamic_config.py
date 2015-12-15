@@ -136,24 +136,25 @@ class Test(unittest.TestCase):
             hostOldData = hostOldDataPotentials[0]
             newState = self._normalizeState(hostNewData["state"])
             oldState = self._normalizeState(hostOldData["state"])
-            if newState == STATES.ONLINE and oldState != STATES.ONLINE:
-                if hostID not in self.expectedAddresses:
-                    address = self.addresses.pop(0)
-                    self.expectedAddresses[hostID] = address
+#            if newState == STATES.ONLINE and oldState != STATES.ONLINE:
+            if hostID not in self.expectedAddresses:
+                address = self.addresses.pop(0)
+                self.expectedAddresses[hostID] = address
+            if hostNewData["primaryMAC"] not in self.expectedDNSMasq.items:
                 self.expectedDNSMasq.add(hostNewData["primaryMAC"],
                                          self.expectedAddresses[hostID])
-            elif newState == STATES.OFFLINE and oldState == STATES.ONLINE:
-                self.expectedDNSMasq.remove(hostNewData["primaryMAC"])
-            elif newState == STATES.DETACHED and oldState == STATES.ONLINE:
-                self.expectedDNSMasq.remove(hostNewData["primaryMAC"])
+#            elif newState == STATES.OFFLINE and oldState == STATES.ONLINE:
+#                self.expectedDNSMasq.remove(hostNewData["primaryMAC"])
+#            elif newState == STATES.DETACHED and oldState == STATES.ONLINE:
+#                self.expectedDNSMasq.remove(hostNewData["primaryMAC"])
 
     def _updateExpectedDnsMasqEntriesUponLoad(self, configuration):
         for hostData in configuration:
             state = self._normalizeState(hostData["state"])
-            if state == STATES.ONLINE:
-                address = self.addresses.pop(0)
-                self.expectedAddresses[hostData["id"]] = address
-                self.expectedDNSMasq.add(hostData["primaryMAC"], address)
+#            if state == STATES.ONLINE:
+            address = self.addresses.pop(0)
+            self.expectedAddresses[hostData["id"]] = address
+            self.expectedDNSMasq.add(hostData["primaryMAC"], address)
 
     def _reloadRackConf(self, fixtureFileName, failureExpected=False):
         oldConfiguration = configurations[config.RACK_YAML]["HOSTS"]
@@ -297,7 +298,8 @@ class Test(unittest.TestCase):
         self.assertEquals(self.dnsMasqMock['00:1e:67:48:20:60'], '192.168.1.11')
         self.assertEquals(self.dnsMasqMock['00:1e:67:44:40:8e'], '192.168.1.12')
         self.assertEquals(self.dnsMasqMock['00:1e:67:45:6e:f1'], '192.168.1.13')
-        self.assertNotIn('00:1e:67:45:70:6d', self.dnsMasqMock.items)
+        self.assertEquals(self.dnsMasqMock['00:1e:67:45:70:6d'], '192.168.1.14')
+#       self.assertNotIn('00:1e:67:45:70:6d', self.dnsMasqMock.items)
 
     def test_BringHostsOnlineFailedSinceDNSMasqAddFailed(self, *_args):
         self._init('offline_rack_conf.yaml')
