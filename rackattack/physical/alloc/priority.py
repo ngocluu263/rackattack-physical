@@ -70,9 +70,25 @@ class Priority:
         return {name: h.stateMachine for name, h in allocated}
 
     def _withdrawExistingAllocations(self, allocated):
+        prioritizedUser = self._allocationInfo.get("user", "Unknown")
+        prioritizedPurpose = self._allocationInfo["purpose"]
+        prioritizedNice = self._allocationInfo["nice"]
+        prioritizedAbsNice = self._absoluteNice(self._allocationInfo)
+        msg = "An allocation with a higher priority needs your resources; User '%(user)s' with purpose " \
+              "'%(purpose)s', nice: '%(nice)s' (ABSOLUTE NICE: '%(absNice)s') trumps your allocation: " % \
+              dict(user=prioritizedUser, purpose=prioritizedPurpose, nice=prioritizedNice,
+                   absNice=prioritizedAbsNice)
         toWithdraw = set([h[1].allocation for h in allocated if h[1].allocation is not None])
         for allocation in toWithdraw:
-            allocation.withdraw("An allocation with higher priority needs resources")
+            info = allocation.allocationInfo()
+            myAbsNice = self._absoluteNice(info)
+            allocationMsg = "User: %(user)s, purpose: %(purpose)s, nice: %(nice)s, " \
+                            "(ABSOLUTE NICE:%(absNice)s)" % dict(user=info.get("user", "Unknown"),
+                                                                 purpose=info["purpose"],
+                                                                 nice=info["nice"],
+                                                                 absNice=myAbsNice)
+            curMsg = msg + allocationMsg
+            allocation.withdraw(curMsg)
 
     def _takeOutOfFreePool(self, allocated):
         for name, host in allocated:
