@@ -19,12 +19,15 @@ class IPMI:
     def off(self):
         IPMI._pool.apply_async(self._powerCommand, args=("off",))
 
-    def powerCycle(self):
-        IPMI._pool.apply_async(self._powerCycle)
+    def asyncPowerCycle(self):
+        IPMI._pool.apply_async(self.powerCycle)
 
-    def _powerCycle(self):
+    def powerCycle(self):
         self._powerCommand("off")
         self._powerCommand("on")
+
+    def softReset(self):
+        self._powerCommand("soft")
 
     def _powerCommand(self, command):
         NUMBER_OF_RETRIES = 10
