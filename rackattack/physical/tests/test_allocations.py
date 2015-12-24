@@ -17,9 +17,13 @@ def osmosisListLabelsFoundMock(cmd):
 
 
 class Test(unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+        self.broadcaster = Publish()
+
     def setUp(self):
         globallock._lock.acquire()
-        self.broadcaster = Publish()
+        self.broadcaster.reset_mock()
         hostNames = ["alpha", "bravo", "charlie", "delta"]
         self.hosts = Hosts()
         self.freePool = freepool.FreePool(self.hosts)

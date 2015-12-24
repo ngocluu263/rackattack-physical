@@ -14,6 +14,10 @@ from rackattack.physical.tests.common import (HostStateMachine, Host, Hosts, Pub
 
 
 class Test(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.broadcaster = Publish()
+
     def setUp(self):
         globallock._lock.acquire()
         self.currentTimer = None
@@ -34,7 +38,7 @@ class Test(unittest.TestCase):
         self.expectedDetached = set()
         self.expectedReleased = set()
         self.wasAllocationDoneAtSomePoint = False
-        self.broadcaster = Publish()
+        self.broadcaster.reset_mock()
         self.hosts = Hosts()
         self.freepool = FreePool(self.hosts)
         for stateMachine in allocated.values():

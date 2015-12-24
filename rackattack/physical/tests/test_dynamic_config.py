@@ -36,6 +36,10 @@ class FakeDNSMasq:
         assert mac not in self.items
         self.items[mac] = address
 
+    def reset(self):
+        self.items = dict()
+        self.side_effect = None
+
     def remove(self, mac):
         del self.items[mac]
 
@@ -63,38 +67,45 @@ class Test(unittest.TestCase):
             configuration = yaml.load(contents)
             configurations[filename] = configuration
 
-    def setUp(self):
-        self.addCleanup(self.releaseLock)
-        globallock._lock.acquire()
-        if not configurations:
-            self.loadConfigurationFilesToMemory()
-        self.fakeFilesystem = enableMockedFilesystem(dynamicconfig)
-        self._createFakeFilesystem()
-        mockNetworkConf = {'NODES_SUBNET_PREFIX_LENGTH': 22, 'ALLOW_CLEARING_OF_DISK': False,
-                           'OSMOSIS_SERVER_IP': '10.0.0.26',
-                           'PUBLIC_NAT_IP': '192.168.1.2',
-                           'GATEWAY_IP': '192.168.1.2',
-                           'FIRST_IP': '192.168.1.11',
-                           'BOOTSERVER_IP': '192.168.1.1',
-                           'PUBLIC_INTERFACE': '00:1e:67:44:13:a1'}
-        self.dnsMasqMock = FakeDNSMasq()
-        self.expectedDNSMasq = FakeDNSMasq()
-        self._loadAddresses(firstIP=mockNetworkConf["FIRST_IP"],
-                            prefixLength=int(mockNetworkConf["NODES_SUBNET_PREFIX_LENGTH"]))
-        self.inaguratorMock = mock.Mock(spec=inaugurate.Inaugurate)
-        self.tftpMock = mock.Mock(spec=tftpboot.TFTPBoot)
-        self.allocationsMock = Allocations()
-        self.reclaimHost = mock.Mock(spec=reclaimhost.ReclaimHost)
+    @classmethod
+    def setUpClass(cls):
+        cls.fakeFilesystem = enableMockedFilesystem(dynamicconfig)
+        cls.loadConfigurationFilesToMemory()
+        cls._createFakeFilesystem()
+        cls.inaguratorMock = mock.Mock(spec=inaugurate.Inaugurate)
+        cls.tftpMock = mock.Mock(spec=tftpboot.TFTPBoot)
+        cls.reclaimHost = mock.Mock(spec=reclaimhost.ReclaimHost)
+        cls.dnsMasqMock = FakeDNSMasq()
+        cls.expectedDNSMasq = FakeDNSMasq()
+        cls.mockNetworkConf = {'NODES_SUBNET_PREFIX_LENGTH': 22, 'ALLOW_CLEARING_OF_DISK': False,
+                               'OSMOSIS_SERVER_IP': '10.0.0.26',
+                               'PUBLIC_NAT_IP': '192.168.1.2',
+                               'GATEWAY_IP': '192.168.1.2',
+                               'FIRST_IP': '192.168.1.11',
+                               'BOOTSERVER_IP': '192.168.1.1',
+                               'PUBLIC_INTERFACE': '00:1e:67:44:13:a1'}
+        network.initialize_globals(cls.mockNetworkConf)
         timer.cancelAllByTag = mock.Mock()
         timer.scheduleAt = mock.Mock()
         timer.scheduleIn = mock.Mock()
+
+    def setUp(self):
+        self.addCleanup(self.releaseLock)
+        globallock._lock.acquire()
+        self.dnsMasqMock.reset()
+        self.expectedDNSMasq.reset()
+        self.addresses = [network.ipAddressFromHostIndex(i) for i in xrange(1, 10)]
+        self.inaguratorMock.reset_mock()
+        self.tftpMock.reset_mock()
+        self.allocationsMock = Allocations()
+        self.reclaimHost.reset_mock()
         self._hosts = hosts.Hosts()
         self.expectedAddresses = dict()
         self.freePool = freepool.FreePool(self._hosts)
         hoststatemachine.HostStateMachine = HostStateMachine
-        network.initialize_globals(mockNetworkConf)
 
-    def tearDown(self):
+    @classmethod
+    def tearDownClass(cls):
         disableMockedFilesystem(dynamicconfig)
 
     def releaseLock(self):
@@ -107,19 +118,12 @@ class Test(unittest.TestCase):
         yield
         globallock._lock.acquire()
 
-    def _loadAddresses(self, firstIP, prefixLength):
-        subnet = netaddr.IPNetwork("%(firstAddr)s/%(prefixLen)s" % dict(firstAddr=firstIP,
-                                                                        prefixLen=prefixLength))
-        firstAddr = netaddr.IPAddress(firstIP)
-        subnet = list(subnet)
-        idxOfFirstAddr = subnet.index(firstAddr)
-        self.addresses = [str(addr) for addr in subnet[idxOfFirstAddr:]]
-
-    def _createFakeFilesystem(self):
-        self.fakeFilesystem.CreateDirectory(self.CONFIG_FILES_DIR)
+    @classmethod
+    def _createFakeFilesystem(cls):
+        cls.fakeFilesystem.CreateDirectory(cls.CONFIG_FILES_DIR)
         for _filename, contents in configurations.iteritems():
             contents = yaml.dump(contents)
-            self.fakeFilesystem.CreateFile(_filename, contents=contents)
+            cls.fakeFilesystem.CreateFile(_filename, contents=contents)
 
     def _normalizeState(self, state):
         return state.strip().upper()

@@ -148,7 +148,10 @@ def executeCodeWhileAllocationIsDeadOfHeartbeatTimeout(_allocation, callback):
         time.time = orig_time
 
 
+# The autospec invocation is put in the global scope since it is damn slow (few milliseconds...)
+fakePublish = mock.create_autospec(publish.Publish)
+
+
 def Publish():
-    fakePublish = mock.create_autospec(publish.Publish)
     fakePublishInstance = fakePublish("amqp://guest:guest@localhost:1234")
     return fakePublish

@@ -1,3 +1,4 @@
+import time
 import yaml
 import ipaddr
 import unittest
@@ -6,10 +7,15 @@ from rackattack.physical import network
 
 
 class Test(unittest.TestCase):
+    CONFIGURATION_FILE = "etc.rackattack.physical.conf.example"
+
+    @classmethod
+    def setUpClass(cls):
+        with open(cls.CONFIGURATION_FILE) as f:
+            cls.exampleConf = yaml.load(f.read())
+
     def setUp(self):
-        configurationFile = "etc.rackattack.physical.conf.example"
-        with open(configurationFile) as f:
-            self.conf = yaml.load(f.read())
+        self.conf = dict(self.exampleConf)
         network.initialize_globals(self.conf)
         self.tested = network
         self.tested.initialize_globals(self.conf)
