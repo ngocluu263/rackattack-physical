@@ -59,8 +59,9 @@ prepareForCleanBuild: install_pika
 
 .PHONY: check_requirements
 check_requirements:
-ifeq ($(REQUIREMENTS_FULFILLED),1)
 ifneq ($(SKIP_REQUIREMENTS),1)
+	sudo pip install -r requirements.txt
+ifeq ($(REQUIREMENTS_FULFILLED),1)
 	$(error Upseto requirements not fulfilled. Run with SKIP_REQUIREMENTS=1 to skip requirements validation.)
 	exit 1
 endif
