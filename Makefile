@@ -4,10 +4,9 @@ all: check_requirements unittest build check_convention
 clean:
 	sudo rm -fr build
 
-COVERED_FILES=rackattack/physical/alloc/priority.py,rackattack/physical/dynamicconfig.py,rackattack/physical/alloc/freepool.py,rackattack/physical/alloc/allocation.py,rackattack/physical/host.py,rackattack/physical/alloc/allocations.py,rackattack/physical/network.py,rackattack/physical/host.py
 unittest: check_requirements
 	@UPSETO_JOIN_PYTHON_NAMESPACES=Yes PYTHONPATH=. python -m coverage run -m rackattack.physical.tests.runner
-	@python -m coverage report --show-missing --fail-under=86 --include=$(COVERED_FILES)
+	@python -m coverage report --show-missing --fail-under=75 --include=rackattack/* --omit="rackattack/physical/tests/*"
 
 .PHONY: integration_test
 integration_test:
