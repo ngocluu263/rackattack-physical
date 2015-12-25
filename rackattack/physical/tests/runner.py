@@ -27,7 +27,8 @@ def configureLogging(verbosity):
 def importAllModulesToMakeThemAppearInCoverageReport():
     blackList = ["rackattack.physical.logconfig",
                  "rackattack.physical.main",
-                 "rackattack.physical.main_reclamationserver"]
+                 "rackattack.physical.main_reclamationserver",
+                 "rackattack.physical.configurenat"]
     dirLists = [[os.path.join(item[0], filename) for filename in item[2]] for item in os.walk("rackattack")]
     files = list(itertools.chain(*dirLists))
     pythonFiles = [_file for _file in files if _file.endswith(".py")]
