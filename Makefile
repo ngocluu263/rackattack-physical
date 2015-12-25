@@ -6,8 +6,8 @@ clean:
 
 COVERED_FILES=rackattack/physical/alloc/priority.py,rackattack/physical/dynamicconfig.py,rackattack/physical/alloc/freepool.py,rackattack/physical/alloc/allocation.py,rackattack/physical/host.py,rackattack/physical/alloc/allocations.py,rackattack/physical/network.py,rackattack/physical/host.py
 unittest: check_requirements
-	UPSETO_JOIN_PYTHON_NAMESPACES=Yes PYTHONPATH=. python -m coverage run -m rackattack.physical.tests.runner
-	python -m coverage report --show-missing --fail-under=86 --include=$(COVERED_FILES)
+	@UPSETO_JOIN_PYTHON_NAMESPACES=Yes PYTHONPATH=. python -m coverage run -m rackattack.physical.tests.runner
+	@python -m coverage report --show-missing --fail-under=86 --include=$(COVERED_FILES)
 
 .PHONY: integration_test
 integration_test:
@@ -60,10 +60,14 @@ prepareForCleanBuild: install_pika
 .PHONY: check_requirements
 check_requirements:
 ifneq ($(SKIP_REQUIREMENTS),1)
-	sudo pip install -r requirements.txt
+	@echo "Validating PIP requirements..."
+	@sudo pip install -r requirements.txt
+	@echo "PIP requirements satisfied."
 ifeq ($(REQUIREMENTS_FULFILLED),1)
 	$(error Upseto requirements not fulfilled. Run with SKIP_REQUIREMENTS=1 to skip requirements validation.)
 	exit 1
+else
+	$(info Note: Run with SKIP_REQUIREMENTS=1 to skip requirements validation.)
 endif
 endif
 
