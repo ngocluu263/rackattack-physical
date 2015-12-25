@@ -25,15 +25,15 @@ def configureLogging(verbosity):
 
 
 def importAllModulesToMakeThemAppearInCoverageReport():
-    blackList = ["rackattack.physical.logconfig"]
+    blackList = ["rackattack.physical.logconfig",
+                 "rackattack.physical.main",
+                 "rackattack.physical.main_reclamationserver"]
     dirLists = [[os.path.join(item[0], filename) for filename in item[2]] for item in os.walk("rackattack")]
     files = list(itertools.chain(*dirLists))
     pythonFiles = [_file for _file in files if _file.endswith(".py")]
     testPath = os.path.join("rackattack", "physical", "tests")
     productionFiles = [_file for _file in pythonFiles if not _file.startswith(testPath)]
-    productionFilesWithoutMain = [_file for _file in productionFiles if "main" not in
-                                  os.path.basename(_file)]
-    modules = [_file.replace(os.path.sep, ".").split(".py")[0] for _file in productionFilesWithoutMain]
+    modules = [_file.replace(os.path.sep, ".").split(".py")[0] for _file in productionFiles]
     modules = [module for module in modules if module not in blackList]
     for module in modules:
         if module.endswith(".__init__"):
