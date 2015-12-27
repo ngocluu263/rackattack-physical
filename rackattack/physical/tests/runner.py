@@ -38,7 +38,7 @@ def importAllModulesToMakeThemAppearInCoverageReport():
     modules = [module for module in modules if module not in blackList]
     for module in modules:
         if module.endswith(".__init__"):
-            module = module.rstrip(".__init__")
+            module = module.split(".__init__")[0]
         __import__(module)
 
 if __name__ == "__main__":
