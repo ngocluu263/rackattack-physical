@@ -19,32 +19,33 @@ def osmosisListLabelsFoundMock(cmd):
 class Test(unittest.TestCase):
     @classmethod
     def setUpClass(self):
+        globallock._lock.acquire()
         self.broadcaster = Publish()
+        timer.scheduleIn = mock.Mock()
+        timer.cancelAllByTag = mock.Mock()
+        self.requirements = dict(node0=dict(imageLabel="echo-foxtrot", imageHint="golf"),
+                                 node1=dict(imageLabel="hotel-india", imageHint="juliet"))
+        self.currentTimer = None
+        self.currentTimerTag = None
+        self.osmosisServer = 'what-a-cool-osmosis-server'
 
     def setUp(self):
-        globallock._lock.acquire()
         self.broadcaster.reset_mock()
         hostNames = ["alpha", "bravo", "charlie", "delta"]
         self.hosts = Hosts()
         self.freePool = freepool.FreePool(self.hosts)
-        self.osmosisServer = 'what-a-cool-osmosis-server'
         self.allocationInfo = dict(purpose='forfun', nice=0)
-        timer.scheduleIn = mock.Mock()
-        timer.cancelAllByTag = mock.Mock()
-        self.currentTimer = None
-        self.currentTimerTag = None
         for hostName in hostNames:
             stateMachine = HostStateMachine(Host(hostName))
             self.hosts.add(stateMachine)
             self.freePool.put(stateMachine)
         self.tested = Allocations(self.broadcaster, self.hosts, self.freePool, self.osmosisServer)
-        self.requirements = dict(node0=dict(imageLabel="echo-foxtrot", imageHint="golf"),
-                                 node1=dict(imageLabel="hotel-india", imageHint="juliet"))
         self.expectedCreationBroadcasts = list()
         self.expectedRequestBroadcasts = list()
         self.expectedRejectedBroadcasts = list()
 
-    def tearDown(self):
+    @classmethod
+    def tearDownClass(self):
         globallock._lock.release()
 
     def test_Create(self):
