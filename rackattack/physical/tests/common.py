@@ -13,7 +13,7 @@ class HostStateMachine:
         self._hostImplementation = hostImplementation
         self._destroyCallback = None
         self._state = hoststatemachine.STATE_CHECKED_IN
-        self._stateChangeCallback = None
+        self.stateChangeCallback = None
         self._imageLabel = None
         self._imageHint = None
 
@@ -34,20 +34,20 @@ class HostStateMachine:
         return self._state
 
     def assign(self, stateChangeCallback, imageLabel, imageHint):
-        self._stateChangeCallback = stateChangeCallback
+        self.stateChangeCallback = stateChangeCallback
         self._imageLabel = imageLabel
         self._imageHint = imageHint
 
     def unassign(self):
-        self._stateChangeCallback = None
+        self.stateChangeCallback = None
 
     def isAssigned(self):
-        return self._stateChangeCallback is not None
+        return self.stateChangeCallback is not None
 
     def fakeInaugurationDone(self):
         self._state = hoststatemachine.STATE_INAUGURATION_DONE
-        if self._stateChangeCallback is not None:
-            self._stateChangeCallback(self)
+        if self.stateChangeCallback is not None:
+            self.stateChangeCallback(self)
 
 
 class Host:
@@ -66,6 +66,11 @@ class Host:
     def truncateSerialLog(self):
         pass
 
+    def primaryMACAddress(self):
+        return "fake primary MAC"
+
+    def secondaryMACAddress(self):
+        return "fake secondary MAC"
 
 class Hosts:
     def __init__(self):
