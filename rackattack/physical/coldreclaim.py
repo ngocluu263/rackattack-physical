@@ -22,10 +22,11 @@ class ColdReclaim:
     def _run(self):
         ipmi = IPMI(self._hostname, self._username, self._password)
         try:
-            if self._hardReset == "True":
-                ipmi.powerCycle()
-            else:
-                ipmi.softReset()
+            ipmi.powerCycle()
+#            if self._hardReset == "True":
+#                ipmi.powerCycle()
+#            else:
+#                ipmi.softReset()
         except:
             logging.exception("Unable to reclaim by cold restart '%(hostname)s'",
                               dict(hostname=self._hostname))
