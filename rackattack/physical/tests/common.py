@@ -72,6 +72,7 @@ class Host:
     def secondaryMACAddress(self):
         return "fake secondary MAC"
 
+
 class Hosts:
     def __init__(self):
         self._stateMachines = []
