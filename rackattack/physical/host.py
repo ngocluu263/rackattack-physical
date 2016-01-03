@@ -119,6 +119,6 @@ class Host:
 
     def setTargetDevice(self, targetDevice):
         if targetDevice != self._targetDevice:
-            logging.info("Changing targat device of %(hostID)s from %(old)s to %(new)s",
+            logging.info("Changing target device of %(hostID)s from %(old)s to %(new)s",
                          dict(hostID=self._id, old=self._targetDevice, new=targetDevice))
             self._targetDevice = targetDevice
