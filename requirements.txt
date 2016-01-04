@@ -1,1 +1,7 @@
 netaddr
+coverage
+simplejson
+ipaddr
+pika
+inaugurator
+pyfakefs
