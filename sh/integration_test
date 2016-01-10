@@ -5,7 +5,7 @@ if [[ $(ps aux | grep beam.smp | grep -v grep) ]]; then
     echo "Please shut down all instances of RabbitMQ before running the test."
     exit 1
 fi
-if [[ $(ps aux | grep rackattack | grep -v grep | grep -v tail | grep -v journalctl | grep -v dashboard) ]]; then
+if [[ $(ps aux | grep rackattack | grep -v grep | grep -v tail | grep -v journalctl | grep -v dashboard | grep -v main_allocation_stats) ]]; then
     echo "Please shut down all instances of any Rackattack before running the test."
     exit 1
 fi

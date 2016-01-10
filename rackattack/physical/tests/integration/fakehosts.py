@@ -75,7 +75,7 @@ class FakeHosts:
         if not self._isConnected.isSet():
             self._logger.info("Waiting for connection to RabbitMQ to be open...")
             self._isConnected.wait()
-        self._hosts[hostname]["state"] = hoststatemachine.STATE_SLOW_RECLAIMATION_IN_PROGRESS
+        self._hosts[hostname]["state"] = hoststatemachine.STATE_SOFT_RECLAMATION
         self._hosts[hostname]["latestRebootID"] += 1
         rebootID = self._hosts[hostname]["latestRebootID"]
         self._logger.info("Invoking a fake reboot (#%(rebootID)s) in connection thread...",
