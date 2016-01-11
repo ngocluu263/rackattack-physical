@@ -123,6 +123,9 @@ class IPCServer(baseipcserver.BaseIPCServer):
         hosts = self._onlineHosts() + self._offlineHosts() + self._detachedHosts()
         return dict(allocations=allocations, hosts=hosts)
 
+    def cmd_admin__asyncReloadConfiguration(self, peer):
+        self._dynamicConfig.asyncReload()
+
     def _detachedHosts(self):
         return [dict(index=host.index(),
                      id=host_id,

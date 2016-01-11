@@ -1,14 +1,17 @@
-import signal
 from rackattack.common import globallock
 from rackattack.physical import config
 from rackattack.physical import host
 from rackattack.common import hoststatemachine
 import yaml
 import logging
+import Queue
+import threading
 
 
-class DynamicConfig:
+class DynamicConfig(threading.Thread):
     def __init__(self, hosts, dnsmasq, inaugurate, tftpboot, freePool, allocations, reclaimHost):
+        threading.Thread.__init__(self)
+        self.daemon = True
         self._hostsStateMachines = hosts
         self._dnsmasq = dnsmasq
         self._inaugurate = inaugurate
@@ -18,8 +21,22 @@ class DynamicConfig:
         self._reclaimHost = reclaimHost
         self._rack = []
         self._hosts = dict()
-        signal.signal(signal.SIGHUP, lambda *args: self._reload())
-        self._reload()
+        self._queue = Queue.Queue()
+        threading.Thread.start(self)
+        self.asyncReload()
+
+    def asyncReload(self):
+        logging.info("Queueing a dynamic configuration request...")
+        self._queue.put(None)
+
+    def run(self):
+        while True:
+            self._queue.get(block=True)
+            try:
+                self._reload()
+            except Exception as e:
+                logging.exception("Could not process dynamic configuration request %(message)s.",
+                                dict(message=str(e)))
 
     def _loadRackYAML(self):
         logging.info("Reading %(file)s", dict(file=config.RACK_YAML))
@@ -120,9 +137,11 @@ class DynamicConfig:
             hostData["state"] = hostData["state"].upper()
 
     def _reload(self):
-        logging.info("Reloading configuration")
+        logging.info("Reloading configuration...")
         rack = self._loadRackYAML()
+        logging.info("Configuration file was read. Acquiring lock...")
         with globallock.lock():
+            logging.info("Processing dynamic configuration request...")
             for hostData in rack['HOSTS']:
                 self._normalizeStateCase(hostData)
                 if self._registeredHost(hostData["id"]):

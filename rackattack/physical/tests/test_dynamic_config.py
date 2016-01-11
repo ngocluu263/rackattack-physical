@@ -20,6 +20,8 @@ from rackattack.physical.alloc import freepool
 from rackattack.physical.alloc.allocation import Allocation
 from rackattack.common.tests.mockfilesystem import enableMockedFilesystem, disableMockedFilesystem
 import netaddr
+import threading
+import greenlet
 
 
 configurations = {}
@@ -168,18 +170,43 @@ class Test(unittest.TestCase):
         self._validateDNSMasqEntries()
         return newConfiguration
 
+    def _threadInitRegisterThreadWrapper(self, *args, **kwargs):
+        self._origThreadInit(*args, **kwargs)
+        threadInstance = args[0]
+        self._threads.add(threadInstance)
+
+    def _generateTestedInstanceWithMockedThreading(self):
+        module = dynamicconfig
+        self._origThreadInit = threading.Thread.__init__
+        origThreadStart = threading.Thread.start
+        self._threads = set()
+        try:
+            module.threading.Thread.__init__ = \
+                self._threadInitRegisterThreadWrapper
+            module.threading.Thread.daemon = mock.Mock()
+            module.threading.Event = mock.Mock()
+            threading.Thread.start = mock.Mock()
+            dynamicconfig.DynamicConfig.asyncReload = dynamicconfig.DynamicConfig._reload
+            instance = dynamicconfig.DynamicConfig(hosts=self._hosts,
+                                                   dnsmasq=self.dnsMasqMock,
+                                                   inaugurate=self.inaguratorMock,
+                                                   tftpboot=self.tftpMock,
+                                                   freePool=self.freePool,
+                                                   allocations=self.allocationsMock,
+                                                   reclaimHost=self.reclaimHost)
+        finally:
+            threading.Thread.__init__ = self._origThreadInit
+            threading.Thread.start = origThreadStart
+        assert len(self._threads) == 1
+        thread = self._threads.pop()
+        return instance
+
     def _init(self, fixtureFileName):
         config.RACK_YAML = fixtureFileName
         configuration = configurations[fixtureFileName]["HOSTS"]
         self._updateExpectedDnsMasqEntriesUponLoad(configuration)
         with self.unlock():
-            self.tested = dynamicconfig.DynamicConfig(hosts=self._hosts,
-                                                      dnsmasq=self.dnsMasqMock,
-                                                      inaugurate=self.inaguratorMock,
-                                                      tftpboot=self.tftpMock,
-                                                      freePool=self.freePool,
-                                                      allocations=self.allocationsMock,
-                                                      reclaimHost=self.reclaimHost)
+            self.tested = self._generateTestedInstanceWithMockedThreading()
 
     def test_BringHostsOnline(self, *_args):
         self._init('offline_rack_conf.yaml')
