@@ -36,7 +36,7 @@ class DynamicConfig(threading.Thread):
                 self._reload()
             except Exception as e:
                 logging.exception("Could not process dynamic configuration request %(message)s.",
-                                dict(message=str(e)))
+                                  dict(message=str(e)))
 
     def _loadRackYAML(self):
         logging.info("Reading %(file)s", dict(file=config.RACK_YAML))
