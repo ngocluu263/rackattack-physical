@@ -19,6 +19,7 @@ STATES = Enum(["ONLINE", "OFFLINE", "DETACHED"])
 class Host:
     DEFAULT_POOL = "default"
     DEFAULT_TARGET_DEVICE = None
+    NR_TRUNCATION_CALLS_BEFORE_ACTUAL_TRUNCATION = 8
 
     def __init__(self, index, id, ipmiLogin, primaryMAC, secondaryMAC, topology, state, pool=None,
                  targetDevice=None):
@@ -39,6 +40,7 @@ class Host:
         if targetDevice is None:
             targetDevice = self.DEFAULT_TARGET_DEVICE
         self._targetDevice = targetDevice
+        self._nrTruncationCalls = 0
 
     def index(self):
         return self._index
@@ -95,6 +97,12 @@ class Host:
             logging.error("SOL filename requested for host %(id)s with no SOL")
             raise Exception("SOL hasn't started")
         return self._solFilename
+
+    def truncateSerialLogEveryNCalls(self):
+        self._nrTruncationCalls += 1
+        if self._nrTruncationCalls > self.NR_TRUNCATION_CALLS_BEFORE_ACTUAL_TRUNCATION:
+            self._nrTruncationCalls = 0
+            self.truncateSerialLog()
 
     def truncateSerialLog(self):
         if self._sol is None:

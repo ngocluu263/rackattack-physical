@@ -107,6 +107,19 @@ class Test(unittest.TestCase):
         self.tested.truncateSerialLog()
         self.assertTrue(solInstance.truncateSerialLog.called)
 
+    def test_TruncateSerialLogEveryNCalls(self):
+        solInstance = mock.Mock()
+        solInstance.serialLogFilename.return_value = "zoolootango"
+        serialoverlan.SerialOverLan = mock.Mock(return_value=solInstance)
+        self.tested.validateSOLStarted()
+        for i in range(1):
+            for _ in range(host.Host.NR_TRUNCATION_CALLS_BEFORE_ACTUAL_TRUNCATION):
+                self.assertFalse(solInstance.truncateSerialLog.called)
+                self.tested.truncateSerialLogEveryNCalls()
+            self.tested.truncateSerialLogEveryNCalls()
+            self.assertTrue(solInstance.truncateSerialLog.called)
+            solInstance.truncateSerialLog.reset_mock()
+
     def test_ReconfigureBIOSDoesNotRaisesAnException(self):
         self.tested.reconfigureBIOS()
 
