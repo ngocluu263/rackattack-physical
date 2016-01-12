@@ -94,7 +94,7 @@ class Host:
 
     def serialLogFilename(self):
         if self._solFilename is None:
-            logging.error("SOL filename requested for host %(id)s with no SOL")
+            logging.error("SOL filename requested for host %(id)s with no SOL", dict(id=self._id))
             raise Exception("SOL hasn't started")
         return self._solFilename
 
