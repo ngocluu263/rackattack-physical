@@ -21,6 +21,7 @@ class Allocation:
         self._inaugurated = dict()
         self._forgottenHosts = set()
         self._death = None
+        self._startTimestamp = time.time()
         self._broadcastAllocationCreation()
         for name, stateMachine in self._waiting.iteritems():
             stateMachine.hostImplementation().truncateSerialLog()
@@ -83,6 +84,9 @@ class Allocation:
         with open(filename, "wb") as f:
             f.write("\n".join(contents))
         return filename
+
+    def getDuration(self):
+        return time.time() - self._startTimestamp
 
     def _heartbeatTimeout(self):
         self._die("heartbeat timeout")

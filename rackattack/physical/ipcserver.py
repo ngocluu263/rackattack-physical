@@ -118,7 +118,8 @@ class IPCServer(baseipcserver.BaseIPCServer):
             allocationInfo=a.allocationInfo(),
             allocated={k: v.hostImplementation().index() for k, v in a.allocated().iteritems()},
             done=a.dead() or a.done(),
-            dead=a.dead()
+            dead=a.dead(),
+            duration=int(a.getDuration())
             ) for a in self._allocations.all()]
         hosts = self._onlineHosts() + self._offlineHosts() + self._detachedHosts()
         return dict(allocations=allocations, hosts=hosts)
