@@ -1,3 +1,4 @@
+import os
 import logging
 import threading
 from rackattack.physical import pikapatch, config
@@ -18,6 +19,7 @@ def configureLogging():
         _logger.propagate = False
 
 if __name__ == "__main__":
+    fakeRebootsPipePath = os.environ["FAKE_REBOOTS_PIPE_PATH"]
     useFakeRackConf()
     useFakeIPMITool()
     useFakeGeneralConfiguration()

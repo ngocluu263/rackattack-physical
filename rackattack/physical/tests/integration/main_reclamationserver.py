@@ -1,4 +1,5 @@
 import os
+import sys
 import time
 import random
 from rackattack.common import softreclaim

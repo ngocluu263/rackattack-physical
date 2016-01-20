@@ -3,8 +3,7 @@ import time
 import yaml
 import random
 import argparse
-from fakehosts import FAKE_REBOOTS_PIPE_NAME
-from rackattack.physical import config, pikapatch
+from rackattack.physical import pikapatch
 from rackattack.physical.tests.integration.main import useFakeRackConf, useFakeIPMITool
 
 
@@ -14,7 +13,8 @@ rangesProbabilities.sort()
 
 
 def informFakeConsumersManagerOfReboot(hostname):
-    fd = os.open(FAKE_REBOOTS_PIPE_NAME, os.O_WRONLY)
+    rebootsPipe = os.environ["FAKE_REBOOTS_PIPE_PATH"]
+    fd = os.open(rebootsPipe, os.O_WRONLY)
     os.write(fd, "%(hostname)s," % dict(hostname=hostname))
     os.close(fd)
 
@@ -50,18 +50,8 @@ def sol(subaction):
 def main(args):
     useFakeRackConf()
     useFakeIPMITool()
-    with open(config.RACK_YAML, "r") as f:
-        conf = yaml.load(f)
     if args.I != "lanplus":
         assert args.I is None
-    hostname = args.H
-    try:
-        host = [host for host in conf["HOSTS"] if host["ipmiLogin"]["hostname"] == hostname][0]
-    except IndexError:
-        print "Invalid hostname: %(hostname)s" % dict(hostname=hostname)
-        raise
-    assert args.U == host["ipmiLogin"]["username"]
-    assert args.P == host["ipmiLogin"]["password"]
     action = dict(power=power, sol=sol).get(args.action)
     action(args.subaction)
 

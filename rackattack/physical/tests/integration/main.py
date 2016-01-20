@@ -1,7 +1,9 @@
 import os
+import sys
 import yaml
 import random
 import tempfile
+import threading
 from rackattack.physical.tests.integration import use_local_inaugurator
 import rackattack.physical.config
 from rackattack.physical.ipmi import IPMI
@@ -11,8 +13,8 @@ use_local_inaugurator.verify()
 
 
 VAR_DIRPATH = os.path.join("/var", "lib", "rackattackphysical")
-RACK_CONFIG_FILE_PATH = os.path.join(VAR_DIRPATH, "rackattack_integration_test_conf_yaml")
-FAKE_REBOOTS_PIPE_NAME = os.path.join(VAR_DIRPATH, "fake_reboots_pipe")
+RACK_CONFIG_FILE_PATH = os.path.join(VAR_DIRPATH, "integration-test.rack.yaml")
+FAKE_REBOOTS_PIPE_NAME = os.path.join(VAR_DIRPATH, "fake-reboots-pipe")
 GENERAL_CONFIG_FILE_PATH = os.path.realpath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "..",
                                                          "etc.rackattack.physical.conf.example"))
 
@@ -31,11 +33,13 @@ def useFakeGeneralConfiguration():
     rackattack.physical.config.CONFIGURATION_FILE = GENERAL_CONFIG_FILE_PATH
 
 if __name__ == "__main__":
+    if not os.path.exists(VAR_DIRPATH):
+        os.makedirs(VAR_DIRPATH)
     useFakeRackConf()
     useFakeIPMITool()
     useFakeGeneralConfiguration()
-    nrRacks = 6
-    nrHostsInRack = 64
+    nrRacks = 1
+    nrHostsInRack = 8
     hosts = [dict(id="rack%02d-server%02d" % (rackIdx, hostIdx),
                   ipmiLogin=dict(username="root",
                                  password="strato",
