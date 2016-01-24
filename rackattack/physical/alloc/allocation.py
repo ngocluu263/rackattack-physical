@@ -114,8 +114,6 @@ class Allocation:
                 message="host %s/%s inaugurated successfully" % (
                     stateMachine.hostImplementation().id(),
                     stateMachine.hostImplementation().ipAddress()))
-            logging.info("Host %(id)s inaugurated successfully", dict(
-                id=stateMachine.hostImplementation().id()))
             if name in self._waiting:
                 del self._waiting[name]
                 self._inaugurated[name] = stateMachine
