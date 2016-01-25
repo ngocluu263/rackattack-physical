@@ -19,7 +19,7 @@ STATES = Enum(["ONLINE", "OFFLINE", "DETACHED"])
 class Host:
     DEFAULT_POOL = "default"
     DEFAULT_TARGET_DEVICE = None
-    NR_TRUNCATION_CALLS_BEFORE_ACTUAL_TRUNCATION = 8
+    NR_TRUNCATION_CALLS_BEFORE_ACTUAL_TRUNCATION = 5
 
     def __init__(self, index, id, ipmiLogin, primaryMAC, secondaryMAC, topology, state, pool=None,
                  targetDevice=None):

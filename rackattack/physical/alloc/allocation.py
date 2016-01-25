@@ -24,7 +24,7 @@ class Allocation:
         self._startTimestamp = time.time()
         self._broadcastAllocationCreation()
         for name, stateMachine in self._waiting.iteritems():
-            stateMachine.hostImplementation().truncateSerialLog()
+            stateMachine.hostImplementation().truncateSerialLogEveryNCalls()
             self._assign(name, stateMachine)
         self.heartbeat()
 
