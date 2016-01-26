@@ -2,7 +2,7 @@ import logging
 from rackattack.ssh import connection
 
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-logging.getLogger('network').setLevel(logging.DEBUG)
+logging.getLogger('network').setLevel(logging.ERROR)
 logging.getLogger('network').propagate = False
 logging.getLogger().setLevel(logging.DEBUG)
 handler = logging.StreamHandler()
