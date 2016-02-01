@@ -19,6 +19,7 @@ class Test(unittest.TestCase):
         cls.broadcaster = Publish()
 
     def setUp(self):
+        self.addCleanup(globallock._lock.release)
         globallock._lock.acquire()
         self.currentTimer = None
         self.currentTimerTag = None
@@ -45,9 +46,6 @@ class Test(unittest.TestCase):
             self.hosts.add(stateMachine)
         self.tested = allocation.Allocation(self.index, requirements, self.allocationInfo, allocated,
                                             self.broadcaster, self.freepool, self.hosts)
-
-    def tearDown(self):
-        globallock._lock.release()
 
     def test_Index(self):
         self.assertEquals(self.tested.index(), self.index)
