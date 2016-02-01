@@ -63,7 +63,7 @@ class Host:
     def fulfillsRequirement(self, requirement):
         return True
 
-    def truncateSerialLog(self):
+    def truncateSerialLogEveryNCalls(self):
         pass
 
     def primaryMACAddress(self):
