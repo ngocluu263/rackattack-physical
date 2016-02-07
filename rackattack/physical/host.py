@@ -94,6 +94,9 @@ class Host:
             requestedPool = self.DEFAULT_POOL
         if requestedPool != self.pool():
             return False
+        minimumNrNICBondings = requirement.get("hardwareConstraints", dict()).get("minimumNrNICBondings", 0)
+        if len(self.getNICBondings()) < minimumNrNICBondings:
+            return False
         return True
 
     def serialLogFilename(self):
