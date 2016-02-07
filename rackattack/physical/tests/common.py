@@ -72,6 +72,9 @@ class Host:
     def secondaryMACAddress(self):
         return "fake secondary MAC"
 
+    def getNICBondings(self):
+        return ["fake list", "of MAC", "addresses"]
+
 
 class Hosts:
     def __init__(self):

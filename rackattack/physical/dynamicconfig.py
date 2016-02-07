@@ -131,8 +131,8 @@ class DynamicConfig(threading.Thread):
         _host.setPool(pool)
         targetDevice = hostData.get("targetDevice", host.Host.DEFAULT_TARGET_DEVICE)
         _host.setTargetDevice(targetDevice)
-        NICBondingPairs = hostData.get("NICBondingPairs", list())
-        _host.setNICBondingPairs(NICBondingPairs)
+        NICBondings = hostData.get("NICBondings", list())
+        _host.setNICBondings(NICBondings)
 
     def _normalizeStateCase(self, hostData):
         if "state" in hostData:

@@ -9,7 +9,7 @@ HOSTS:
   topology:
     rackID: rack01
   state: online
-  NICBondingPairs:
+  NICBondings:
   - ["some-mac-address", "some-other-mac-address"]
   - ["some-mac-address2", "some-other-mac-address2"]
 - id: "rack01-server42"
@@ -42,7 +42,7 @@ HOSTS:
   topology:
     rackID: rack01
   state: online
-  NICBondingPairs:
+  NICBondings:
   - ["some-mac-address3", "some-other-mac-address3"]
   - ["some-mac-address4", "some-other-mac-address4"]
 

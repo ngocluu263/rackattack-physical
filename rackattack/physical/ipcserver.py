@@ -48,7 +48,7 @@ class IPCServer(baseipcserver.BaseIPCServer):
                 inauguratorServerIP=network.GATEWAY_IP_ADDRESS,
                 gateway=network.GATEWAY_IP_ADDRESS,
                 osmosisServerIP=self._osmosisServerIP,
-                NICBondingPairs=host.getNICBondingPairs())
+                NICBondings=host.getNICBondings())
         return result
 
     def cmd_allocation__free(self, id, peer):

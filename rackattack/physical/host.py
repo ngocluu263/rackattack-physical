@@ -22,7 +22,7 @@ class Host:
     NR_TRUNCATION_CALLS_BEFORE_ACTUAL_TRUNCATION = 5
 
     def __init__(self, index, id, ipmiLogin, primaryMAC, secondaryMAC, topology, state, pool=None,
-                 targetDevice=None, NICBondingPairs=None):
+                 targetDevice=None, NICBondings=None):
         self._index = index
         self._id = id
         self._ipmiLogin = ipmiLogin
@@ -40,10 +40,10 @@ class Host:
         if targetDevice is None:
             targetDevice = self.DEFAULT_TARGET_DEVICE
         self._targetDevice = targetDevice
-        self._NICBondingPairs = None
-        if NICBondingPairs is None:
-            NICBondingPairs = list()
-        self.setNICBondingPairs(NICBondingPairs)
+        self._NICBondings = None
+        if NICBondings is None:
+            NICBondings = list()
+        self.setNICBondings(NICBondings)
         self._nrTruncationCalls = 0
 
     def index(self):
@@ -135,12 +135,12 @@ class Host:
                          dict(hostID=self._id, old=self._targetDevice, new=targetDevice))
             self._targetDevice = targetDevice
 
-    def getNICBondingPairs(self):
-        return self._NICBondingPairs
+    def getNICBondings(self):
+        return self._NICBondings
 
-    def setNICBondingPairs(self, NICBondingPairs):
-        assert isinstance(NICBondingPairs, list)
-        if NICBondingPairs != self._NICBondingPairs:
-            logging.info("Changing NIC bonding pairs of %(hostID)s from %(old)s to %(new)s",
-                         dict(hostID=self._id, old=self._NICBondingPairs, new=NICBondingPairs))
-            self._NICBondingPairs = NICBondingPairs
+    def setNICBondings(self, NICBondings):
+        assert isinstance(NICBondings, list)
+        if NICBondings != self._NICBondings:
+            logging.info("Changing NIC bonding lists of %(hostID)s from %(old)s to %(new)s",
+                         dict(hostID=self._id, old=self._NICBondings, new=NICBondings))
+            self._NICBondings = NICBondings
