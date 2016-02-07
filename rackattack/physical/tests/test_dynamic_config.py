@@ -389,6 +389,18 @@ class Test(unittest.TestCase):
         for host in hosts.values():
             self.assertEquals(host.targetDevice(), Host.DEFAULT_TARGET_DEVICE)
 
+    def test_NICBondingPairs(self, *args):
+        self._init('nic_bonding_rack_conf.yaml')
+        self._validate()
+        self._reloadRackConf('online_rack_conf.yaml')
+        self._validate()
+
+    def test_ChangeNICBondingPairs(self, *args):
+        self._init('online_rack_conf.yaml')
+        self._validate()
+        self._reloadRackConf('nic_bonding_rack_conf.yaml')
+        self._validate()
+
     def _validateOnlineHostsAreInHostsPool(self, exceptForIDs=None):
         if exceptForIDs is None:
             exceptForIDs = []
@@ -441,12 +453,24 @@ class Test(unittest.TestCase):
         expected = self.expectedDNSMasq.items
         self.assertEquals(actual, expected)
 
+    def _validateNICBondingPairs(self):
+        allHosts = self.tested.getOnlineHosts()
+        allHosts.update(self.tested.getOfflineHosts())
+        allHosts.update(self.tested.getDetachedHosts())
+        configuration = configurations[config.RACK_YAML]["HOSTS"]
+        for hostID, host in allHosts.iteritems():
+            actual = host.getNICBondingPairs()
+            expected = [host for host in configuration if hostID == host["id"]][0].get(
+                "NICBondingPairs", list())
+            self.assertEquals(actual, expected)
+
     def _validate(self, onlineHostsNotInPool=None):
         self._validateOnlineHosts()
         self._validateOfflineHosts()
         self._validateOnlineHostsAreInHostsPool(onlineHostsNotInPool)
         self._validateDetachedHosts()
         self._validateDNSMasqEntries()
+        self._validateNICBondingPairs()
 
     def _idsOfHostsInConfiguration(self, state=None):
         configuration = configurations[config.RACK_YAML]
