@@ -5,3 +5,4 @@ ipaddr
 pika
 inaugurator
 pyfakefs
+enum34
