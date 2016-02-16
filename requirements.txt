@@ -2,8 +2,9 @@ netaddr
 coverage
 simplejson
 ipaddr
-pika
-inaugurator
-pyfakefs
+pika>=0.10.0
+inaugurator==1.2
 enum34
 mock
+pyfakefs>=2.7
+pep8
