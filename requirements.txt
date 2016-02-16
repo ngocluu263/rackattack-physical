@@ -9,3 +9,4 @@ mock
 pyfakefs>=2.7
 pep8
 greenlet
+paramiko
