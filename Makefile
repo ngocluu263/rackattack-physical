@@ -1,10 +1,10 @@
-REQUIREMENTS_FULFILLED = $(shell upseto checkRequirements 2> /dev/null; echo $$?)
-all: check_requirements unittest build check_convention
+UPSETO_REQUIREMENTS_FULFILLED = $(shell upseto checkRequirements 2> /dev/null; echo $$?)
+all: validate_requirements unittest build check_convention
 
 clean:
 	sudo rm -fr build
 
-unittest: check_requirements
+unittest: validate_python_requirements
 	@UPSETO_JOIN_PYTHON_NAMESPACES=Yes PYTHONPATH=. python -m coverage run -m rackattack.physical.tests.runner
 	@python -m coverage report --show-missing --fail-under=75 --include=rackattack/* --omit="rackattack/physical/tests/*"
 
@@ -18,7 +18,7 @@ check_convention:
 check_before_commit: check_convention unittest
 
 .PHONY: build
-build: check_requirements build/rackattack.physical.egg build/rackattack.physical.reclamation.egg
+build: validate_requirements build/rackattack.physical.egg build/rackattack.physical.reclamation.egg
 
 build/rackattack.physical.egg: rackattack/physical/main.py
 	-mkdir $(@D)
@@ -34,7 +34,7 @@ install_pika:
 	-sudo mkdir /usr/share/rackattack.physical
 	sudo cp pika-stable/pika-git-ref-6226dc0.egg /usr/share/rackattack.physical
 
-install: check_requirements install_pika build/rackattack.physical.egg build/rackattack.physical.reclamation.egg
+install: validate_python_requirements install_pika build/rackattack.physical.egg build/rackattack.physical.reclamation.egg
 	-sudo systemctl stop rackattack-physical.service
 	-sudo systemctl stop rackattack-physical-reclamation.service
 	-sudo mkdir /usr/share/rackattack.physical
@@ -56,18 +56,31 @@ uninstall:
 
 prepareForCleanBuild: install_pika
 
-.PHONY: check_requirements
-check_requirements:
+.PHONY: validate_python_requirements
+validate_python_requirements:
 ifneq ($(SKIP_REQUIREMENTS),1)
-	@echo "Validating PIP requirements..."
-	@sudo pip install -r requirements.txt
-	@echo "PIP requirements satisfied."
-ifeq ($(REQUIREMENTS_FULFILLED),1)
+ifeq ($(UPSETO_REQUIREMENTS_FULFILLED),1)
 	$(error Upseto requirements not fulfilled. Run with SKIP_REQUIREMENTS=1 to skip requirements validation.)
 	exit 1
 else
-	$(info Note: Run with SKIP_REQUIREMENTS=1 to skip requirements validation.)
+	$(info ***********************************************************************)
+	$(info * Note: Run with SKIP_REQUIREMENTS=1 to skip requirements validation. *)
+	$(info ***********************************************************************)
+	@sleep 4
 endif
+	@echo "Validating PIP requirements..."
+	@sudo pip install -r requirements.txt
+	@echo "PIP requirements satisfied."
+else
+	@echo "Skipping requirements validation."
+endif
+
+.PHONY: validate_requirements
+validate_requirements: validate_python_requirements
+ifneq ($(SKIP_REQUIREMENTS),1)
+	sh/validate_packages_prerequisites.sh
+else
+	@echo "Skipping requirements validation."
 endif
 
 .PHONY: configure_nat
