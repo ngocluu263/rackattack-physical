@@ -53,7 +53,7 @@ def initialize_globals(conf):
     GATEWAY_IP_ADDRESS = conf["GATEWAY_IP"]
     BOOTSERVER_IP_ADDRESS = conf["BOOTSERVER_IP"]
     assert BOOTSERVER_IP_ADDRESS not in _NODES
-    assert BOOTSERVER_IP_ADDRESS in subnet
+    #assert BOOTSERVER_IP_ADDRESS in subnet
     LAST_INDEX = len(_NODES)
     LAST_IP = _NODES[LAST_INDEX - 1]
     PUBLIC_NAT_IP = conf.get("PUBLIC_NAT_IP", None)
