@@ -13,7 +13,6 @@ from rackattack.physical import serialoverlan
 
 class Test(unittest.TestCase):
     def setUp(self):
-        configurationFile = "etc.rackattack.physical.conf.example"
         self.index = random.randint(1, 255)
         self.id = 'rack01-server49'
         self.ipmiLogin = dict(username='johabab', password='12345679', hostname='192.168.100.100')
@@ -26,7 +25,7 @@ class Test(unittest.TestCase):
         self.tested = host.Host(index=self.index, id=self.id, ipmiLogin=self.ipmiLogin,
                                 primaryMAC=self.primaryMAC, secondaryMAC=self.secondaryMAC,
                                 topology=self.topology, state=host.STATES.ONLINE, pool="thePool")
-        with open(configurationFile) as f:
+        with open(config.EXAMPLE_CONF_YAML) as f:
             self.conf = yaml.load(f.read())
         network.initialize_globals(self.conf)
 

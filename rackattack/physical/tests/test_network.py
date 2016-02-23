@@ -7,7 +7,7 @@ from rackattack.physical import network
 
 
 class Test(unittest.TestCase):
-    CONFIGURATION_FILE = "etc.rackattack.physical.conf.example"
+    CONFIGURATION_FILE = config.EXAMPLE_CONF_YAML
 
     @classmethod
     def setUpClass(cls):
