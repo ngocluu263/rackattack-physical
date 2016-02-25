@@ -98,6 +98,12 @@ class Host:
         minimumNrNICBondings = requirement.get("hardwareConstraints", dict()).get("minimumNrNICBondings", 0)
         if len(self.getNICBondings()) < minimumNrNICBondings:
             return False
+        maximumNrNICBondings = requirement.get("hardwareConstraints", dict()).get("maximumNrNICBondings",
+                                                                                  None)
+        if maximumNrNICBondings is not None:
+            assert isinstance(maximumNrNICBondings, int)
+            if len(self.getNICBondings()) > minimumNrNICBondings:
+                return False
         if "serverIDWildcard" in requirement:
             wildcard = requirement["serverIDWildcard"]
             assert isinstance(wildcard, str), str(wildcard)
