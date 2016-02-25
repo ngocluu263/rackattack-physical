@@ -16,7 +16,7 @@ VAR_DIRPATH = os.path.join("/var", "lib", "rackattackphysical")
 RACK_CONFIG_FILE_PATH = os.path.join(VAR_DIRPATH, "integration-test.rack.yaml")
 FAKE_REBOOTS_PIPE_NAME = os.path.join(VAR_DIRPATH, "fake-reboots-pipe")
 GENERAL_CONFIG_FILE_PATH = os.path.realpath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "..",
-                                                         rackattack.physical.config.EXAMPLE_YAML))
+                                                         rackattack.physical.config.EXAMPLE_CONF_YAML))
 
 
 def useFakeRackConf():

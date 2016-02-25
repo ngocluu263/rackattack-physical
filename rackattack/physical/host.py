@@ -4,6 +4,7 @@ from rackattack.physical import config
 from rackattack.physical import serialoverlan
 import logging
 import enum
+import re
 
 
 class Enum(set):
@@ -97,6 +98,11 @@ class Host:
         minimumNrNICBondings = requirement.get("hardwareConstraints", dict()).get("minimumNrNICBondings", 0)
         if len(self.getNICBondings()) < minimumNrNICBondings:
             return False
+        if "serverIDWildcard" in requirement:
+            wildcard = requirement["serverIDWildcard"]
+            assert isinstance(wildcard, str), str(wildcard)
+            if not self._doesSearchTermMatchWildcardPattern(self._id, wildcard):
+                return False
         return True
 
     def serialLogFilename(self):
@@ -146,4 +152,11 @@ class Host:
         if NICBondings != self._NICBondings:
             logging.info("Changing NIC bonding lists of %(hostID)s from %(old)s to %(new)s",
                          dict(hostID=self._id, old=self._NICBondings, new=NICBondings))
+
             self._NICBondings = NICBondings
+
+    @staticmethod
+    def _doesSearchTermMatchWildcardPattern(searchTerm, wildcard):
+        regexPattern = ".*".join([re.escape(part) for part in wildcard.split("*")]) + "$"
+        regex = re.compile(regexPattern)
+        return regex.match(searchTerm) is not None

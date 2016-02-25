@@ -2,6 +2,7 @@ import yaml
 import time
 import random
 import threading
+import traceback
 import subprocess
 from rackattack.physical import pikapatch
 from rackattack import clientfactory
@@ -93,12 +94,13 @@ class RackattackTestClients(threading.Thread):
         else:
             minorityAction()
 
-    def _generateRequirements(self, nrHosts, pool):
+    def _generateRequirements(self, nrHosts, pool, serverIDWildcard):
         requirements = dict([("{}{}".format(self._nodeBaseName, nodeIdx),
                               Requirement(imageLabel=self._label,
                                           imageHint=self._label,
                                           hardwareConstraints=None,
-                                          pool=pool))
+                                          pool=pool,
+                                          serverIDWildcard=serverIDWildcard))
                              for nodeIdx in xrange(nrHosts)])
         return requirements
 
@@ -106,17 +108,20 @@ class RackattackTestClients(threading.Thread):
         allocationInfo = AllocationInfo(user="johabab", purpose="loadTests")
         return allocationInfo
 
-    def allocate(self, nrHosts, pool="default"):
+    def allocate(self, nrHosts, pool="default", serverIDWildcard=""):
         self._updateNrAllocatedHosts()
-        self._allocate(nrHosts, pool)
+        self._allocate(nrHosts, pool, serverIDWildcard)
 
     def _allocateForBackground(self):
         nrHosts = self._getRandomNrHosts()
         self._allocate(nrHosts)
 
-    def _allocate(self, nrHostsToAllocate, pool="default"):
-        requirements = self._generateRequirements(nrHostsToAllocate, pool=pool)
+    def _allocate(self, nrHostsToAllocate, pool="default", serverIDWildcard=""):
+        requirements = self._generateRequirements(nrHostsToAllocate,
+                                                  pool=pool,
+                                                  serverIDWildcard=serverIDWildcard)
         allocationInfo = self._generateAllocationInfo()
+        print requirements
         print "Trying to allocate %(nrHosts)s hosts from %(pool)s" % dict(nrHosts=len(requirements),
                                                                           pool=pool)
         allocation = None
@@ -177,9 +182,9 @@ def bgStress(mode):
         backgroundStressTestClient.stop()
 
 
-def allocate(nrHosts, pool="default"):
+def allocate(nrHosts, pool="default", serverIDWildcard=""):
     nrHosts = int(nrHosts)
-    profilingTestClient.allocate(nrHosts, pool=pool)
+    profilingTestClient.allocate(nrHosts, pool=pool, serverIDWildcard=serverIDWildcard)
     profilingAllocation = True
 
 
@@ -221,7 +226,8 @@ def main():
         try:
             command(*args)
         except Exception as e:
-            print "An error has occurred while executing command: %(message)s" % dict(message=e.message)
+            print e.message
+            traceback.print_exc()
             continue
 
 if __name__ == '__main__':
