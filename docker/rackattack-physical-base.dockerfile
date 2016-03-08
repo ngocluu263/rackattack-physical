@@ -48,9 +48,13 @@ RUN git clone https://github.com/Stratoscale/inaugurator && \
     BUILD_HOST=local IMAGES_SOURCE=remote make install -C inaugurator && \
     rm -rf inaugurator
 
-RUN mkdir work && \
-    cd work  && \
-    git clone https://github.com/Stratoscale/rackattack-physical && \
+RUN mkdir work
+
+ADD rackattack-physical/ /root/work/rackattack-physical/
+ADD rackattack-virtual/ /root/work/rackattack-virtual/
+ADD rackattack-api/ /root/work/rackattack-api/
+
+RUN cd work && \
     cd rackattack-physical && \
     upseto fulfillRequirements && \
     make validate_requirements && \

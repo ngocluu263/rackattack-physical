@@ -102,6 +102,14 @@ build/rackattack-physical-reclamation.dockerfile: docker/rackattack-physical-rec
 .PHONY: rackattack-physical-docker-image
 rackattack-physical-docker-image: build/rackattack-physical.dockerfile
 	@echo "Building the rackattack-physical docker image..."
+	-rm -rf build/rackattack-{physical,virtual,api}
+	-mkdir build
+	cp -rf {../,build/}rackattack-virtual
+	cp -rf {../,build/}rackattack-api
+	rm -rf /tmp/rackattack-physical.temp
+	cp -rf . /tmp/rackattack-physical.temp
+	cp -rf /tmp/rackattack-physical.temp build/rackattack-physical
+	rm -rf /tmp/rackattack-physical.temp
 	@docker build -f $< -t rackattack-physical:v5 build
 
 .PHONY: rackattack-physical-reclamation-docker-image
