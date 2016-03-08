@@ -44,8 +44,8 @@ RUN git clone https://github.com/Stratoscale/osmosis && \
 
 # Install Inaugurator
 RUN git clone https://github.com/Stratoscale/inaugurator && \
-    git --work-tree=inaugurator --git-dir=inaugurator/.git checkout v1.2 && \
-    make install -C inaugurator IMAGES_SOURCE=remote && \
+    git --work-tree=inaugurator --git-dir=inaugurator/.git checkout v1.2.1 && \
+    BUILD_HOST=local IMAGES_SOURCE=remote make install -C inaugurator && \
     rm -rf inaugurator
 
 RUN mkdir work && \
