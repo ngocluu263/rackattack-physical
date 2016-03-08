@@ -3,7 +3,7 @@ coverage
 simplejson
 ipaddr
 pika>=0.10.0
-inaugurator==1.2
+inaugurator==1.2.1
 enum34
 mock
 pyfakefs>=2.7
