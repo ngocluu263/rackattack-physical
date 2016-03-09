@@ -110,12 +110,12 @@ rackattack-physical-docker-image: build/rackattack-physical.dockerfile
 	cp -rf . /tmp/rackattack-physical.temp
 	cp -rf /tmp/rackattack-physical.temp build/rackattack-physical
 	rm -rf /tmp/rackattack-physical.temp
-	@docker build -f $< -t rackattack-physical:v5 build
+	@docker build -f $< -t rackattack-physical build
 
 .PHONY: rackattack-physical-reclamation-docker-image
 rackattack-physical-reclamation-docker-image: build/rackattack-physical-reclamation.dockerfile
 	@echo "Building the rackattack-physical-reclamation docker image..."
-	@docker build -f $< -t rackattack-physical-reclamation:v5 build
+	@docker build -f $< -t rackattack-physical-reclamation build
 
 build/pipework:
 	-wget --no-check-certificate https://raw.github.com/jpetazzo/pipework/master/pipework -O build/pipework
@@ -128,7 +128,7 @@ ifneq ($(shell docker ps | grep -c "rackattack-physical:" | xargs echo -n),0)
 	exit 1
 endif
 	-rm "$(RACKATTACK_PHYSICAL_DOCKER_CIDFILE)"
-	docker run -d=true -v /etc/rackattack-physical:/etc/rackattack-physical -v /usr/share/rackattack.physical/reclamation_requests_fifo:/usr/share/rackattack.physical/reclamation_requests_fifo -v /usr/share/rackattack.physical/soft_reclamations_failure_msg_fifo:/usr/share/rackattack.physical/soft_reclamations_failure_msg_fifo -v /var/lib/rackattackphysical/:/var/lib/rackattackphysical/ -p 1013:1013 -p 1014:1014 -p 1015:1015 -p 1016:1016 -p 67:67/udp -p 69:69 -p 53:53/udp --cap-add NET_ADMIN --cidfile="$(RACKATTACK_PHYSICAL_DOCKER_CIDFILE)" rackattack-physical:v5
+	docker run -d=true -v /etc/rackattack-physical:/etc/rackattack-physical -v /usr/share/rackattack.physical/reclamation_requests_fifo:/usr/share/rackattack.physical/reclamation_requests_fifo -v /usr/share/rackattack.physical/soft_reclamations_failure_msg_fifo:/usr/share/rackattack.physical/soft_reclamations_failure_msg_fifo -v /var/lib/rackattackphysical/:/var/lib/rackattackphysical/ -p 1013:1013 -p 1014:1014 -p 1015:1015 -p 1016:1016 -p 67:67/udp -p 69:69 -p 53:53/udp --cap-add NET_ADMIN --cidfile="$(RACKATTACK_PHYSICAL_DOCKER_CIDFILE)" rackattack-physical
 	@echo "Setting up networking for the rackattack-physical container..."
 	@UPSETO_JOIN_PYTHON_NAMESPACES=Yes PYTHONPATH=. python rackattack/physical/setup_networking_for_docker_idempotently.py "`cat /var/lib/rackattackphysical/cid`" build/pipework
 	@echo "Done."
@@ -139,7 +139,7 @@ ifneq ($(shell docker ps | grep -c "rackattack-physical-reclamation:"),0)
 	$(error Cannot start rackattack while another rackattack container is running.)
 	exit 1
 endif
-	docker run -d=true -v /etc/rackattack-physical:/etc/rackattack-physical -v /usr/share/rackattack.physical/reclamation_requests_fifo:/usr/share/rackattack.physical/reclamation_requests_fifo -v /usr/share/rackattack.physical/soft_reclamations_failure_msg_fifo:/usr/share/rackattack.physical/soft_reclamations_failure_msg_fifo rackattack-physical-reclamation:v5
+	docker run -d=true -v /etc/rackattack-physical:/etc/rackattack-physical -v /usr/share/rackattack.physical/reclamation_requests_fifo:/usr/share/rackattack.physical/reclamation_requests_fifo -v /usr/share/rackattack.physical/soft_reclamations_failure_msg_fifo:/usr/share/rackattack.physical/soft_reclamations_failure_msg_fifo rackattack-physical-reclamation
 
 .PHONY: install_as_docker_containers
 install_as_docker_containers: run-rackattack-physical-reclamation-container run-rackattack-physical-reclamation-container
