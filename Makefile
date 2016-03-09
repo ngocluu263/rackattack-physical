@@ -94,26 +94,24 @@ endif
 	sudo UPSETO_JOIN_PYTHON_NAMESPACES=Yes PYTHONPATH=. python -m rackattack.physical.configurenat $(INTERFACE)
 
 build/rackattack-physical.dockerfile: docker/rackattack-physical.dockerfile.m4 docker/rackattack-physical-base.dockerfile
-	-mkdir $(@D)
+	-mkdir -p $(@D)
 	m4 -Idocker $< > $@
 
 build/rackattack-physical-reclamation.dockerfile: docker/rackattack-physical-reclamation.dockerfile.m4 docker/rackattack-physical-base.dockerfile
-	-mkdir $(@D)
+	-mkdir -p $(@D)
 	m4 -Idocker $< > $@
 
+build/rackattack-virtual: ../rackattack-virtual
+	cp -rf ../rackattack-virtual $@
+
+build/rackattack-api:
+	cp -rf ../rackattack-api $@
+
 .PHONY: rackattack-physical-docker-image
-rackattack-physical-docker-image: build/rackattack-physical.dockerfile
+rackattack-physical-docker-image: build/rackattack-physical.dockerfile build/rackattack-virtual build/rackattack-api
 ifeq ($(shell sudo docker images | egrep -Ec "^rackattack-physical[ ]+$(VERSION)" | xargs echo -n),0)
 	$(info Building the rackattack-physical docker image for version '$(VERSION)'...)
-	-rm -rf build/rackattack-{physical,virtual,api}
-	-mkdir build
-	cp -rf {../,build/}rackattack-virtual
-	cp -rf {../,build/}rackattack-api
-	rm -rf /tmp/rackattack-physical.temp
-	cp -rf . /tmp/rackattack-physical.temp
-	cp -rf /tmp/rackattack-physical.temp build/rackattack-physical
-	rm -rf /tmp/rackattack-physical.temp
-	@docker build -f $< -t "rackattack-physical:$(VERSION)" build
+	@docker build -f $< -t "rackattack-physical:$(VERSION)" .
 else
 	$(info It seems that a rackattack-physical Docker image for version '$(VERSION)' already exists. Skipping build.)
 endif
@@ -122,7 +120,7 @@ endif
 rackattack-physical-reclamation-docker-image: build/rackattack-physical-reclamation.dockerfile
 ifeq ($(shell sudo docker images | egrep -Ec "^rackattack-physical-reclamation[ ]+$(VERSION)" | xargs echo -n),0)
 	$(info Building the rackattack-physical-reclamation docker image for version '$(VERSION)'...)
-	@docker build -f $< -t "rackattack-physical-reclamation:$(VERSION)" build
+	@docker build -f $< -t "rackattack-physical-reclamation:$(VERSION)" .
 else
 	$(info It seems that a rackattack-physical-reclamation Docker image for version '$(VERSION)' already exists. Skipping build.)
 endif

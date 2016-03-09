@@ -50,11 +50,10 @@ RUN git clone https://github.com/Stratoscale/inaugurator && \
 
 RUN mkdir work
 
-ADD rackattack-physical/ /root/work/rackattack-physical/
-ADD rackattack-virtual/ /root/work/rackattack-virtual/
-ADD rackattack-api/ /root/work/rackattack-api/
+ADD . /root/work/rackattack-physical/
 
 RUN cd work && \
+    mv rackattack-physical/build/rackattack-{virtual,api}/ . && \
     cd rackattack-physical && \
     upseto fulfillRequirements && \
     make validate_requirements && \
