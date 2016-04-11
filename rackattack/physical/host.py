@@ -104,8 +104,8 @@ class Host:
             assert isinstance(maximumNrNICBondings, int)
             if len(self.getNICBondings()) > minimumNrNICBondings:
                 return False
-        if "serverIDWildcard" in requirement:
-            wildcard = requirement["serverIDWildcard"]
+        wildcard = requirement.get("serverIDWildcard", None)
+        if wildcard is not None and wildcard:
             assert isinstance(wildcard, str), str(wildcard)
             if not self._doesSearchTermMatchWildcardPattern(self._id, wildcard):
                 return False
