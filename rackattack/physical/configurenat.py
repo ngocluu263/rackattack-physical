@@ -56,5 +56,5 @@ if __name__ == "__main__":
     with open(config.CONFIGURATION_FILE) as f:
         conf = yaml.load(f.read())
     network.initialize_globals(conf)
-    interface = sys.argv[2]
+    interface = sys.argv[1]
     configureNat(interface)
