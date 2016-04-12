@@ -22,7 +22,9 @@ class ColdReclaim:
     def _run(self):
         ipmi = IPMI(self._hostname, self._username, self._password)
         try:
-            ipmi.powerCycle()
+            ipmi._powerCommand("off")
+            time.sleep(2)
+            ipmi._powerCommand("on")
 #            if self._hardReset == "True":
 #                ipmi.powerCycle()
 #            else:
