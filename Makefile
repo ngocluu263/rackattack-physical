@@ -37,6 +37,7 @@ install_pika:
 	-sudo mkdir /usr/share/rackattack.physical
 	sudo cp pika-stable/pika-git-ref-6226dc0.egg /usr/share/rackattack.physical
 
+ifeq ($(HOST),local)
 install: validate_python_requirements install_pika build/rackattack.physical.egg build/rackattack.physical.reclamation.egg
 	-sudo systemctl stop rackattack-physical.service
 	-sudo systemctl stop rackattack-physical-reclamation.service
@@ -56,6 +57,11 @@ uninstall:
 	-sudo rm -fr /usr/lib/systemd/system/rackattack-physical.service
 	-sudo rm -fr /usr/lib/systemd/system/rackattack-physical-reclamation.service
 	sudo rm -fr /usr/share/rackattack.physical
+else
+ifeq ($(HOST),docker)
+install: run-rackattack-physical-reclamation-container run-rackattack-physical-reclamation-container
+endif
+endif
 
 prepareForCleanBuild: install_pika
 
@@ -107,6 +113,7 @@ build/rackattack-virtual: ../rackattack-virtual
 build/rackattack-api:
 	cp -rf ../rackattack-api $@
 
+ifeq ($(HOST),docker)
 .PHONY: rackattack-physical-docker-image
 rackattack-physical-docker-image: build/rackattack-physical.dockerfile build/rackattack-virtual build/rackattack-api
 ifeq ($(shell sudo docker images | egrep -Ec "^rackattack-physical[ ]+$(VERSION)" | xargs echo -n),0)
@@ -148,6 +155,4 @@ ifneq ($(shell docker ps | grep -c "rackattack-physical-reclamation:"),0)
 	exit 1
 endif
 	docker run -d=true -v /etc/rackattack-physical:/etc/rackattack-physical -v /usr/share/rackattack.physical/reclamation_requests_fifo:/usr/share/rackattack.physical/reclamation_requests_fifo -v /usr/share/rackattack.physical/soft_reclamations_failure_msg_fifo:/usr/share/rackattack.physical/soft_reclamations_failure_msg_fifo "rackattack-physical-reclamation:$(VERSION)"
-
-.PHONY: install_as_docker_containers
-install_as_docker_containers: run-rackattack-physical-reclamation-container run-rackattack-physical-reclamation-container
+endif
