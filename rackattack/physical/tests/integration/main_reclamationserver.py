@@ -25,6 +25,7 @@ class FakeSoftReclaim(ORIG_SOFT_RECLAIM):
                  softReclamationFailedMsgFifoWriteFd,
                  inauguratorKernel,
                  inauguratorInitRD):
+        self._hostID = hostID
         hostname = "10.0.0.101"
         username = "root"
         password = "strato"
@@ -63,6 +64,16 @@ class FakeSoftReclaim(ORIG_SOFT_RECLAIM):
         uptime = self._getUptime()
         if random.randint(0, 9) == 0:
             raise softreclaim.UptimeTooLong(100000)
+
+    def _reclaimByKexec(self):
+        self._connection.ftp.putFile("/tmp/vmlinuz-%s" % (self._hostID,), self._inauguratorKernel)
+        self._connection.ftp.putFile("/tmp/initrd-%s" % (self._hostID,), self._inauguratorInitRD)
+        self._connection.run.script(
+            "%s --load /tmp/vmlinuz --initrd=/tmp/initrd --append='%s'" %
+            (self._KEXEC_CMD,
+             self._inauguratorCommandLine(self._hostID, self._macAddress, self._hostname, clearDisk=False,
+                                          targetDevice=self._targetDevice)))
+        self._connection.run.backgroundScript("sleep 2; %s -e" % (self._KEXEC_CMD,))
 
 
 if __name__ == "__main__":
