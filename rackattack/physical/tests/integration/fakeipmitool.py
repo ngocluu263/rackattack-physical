@@ -1,15 +1,8 @@
 import os
 import time
-import yaml
-import random
 import argparse
 from rackattack.physical import pikapatch
 from rackattack.physical.tests.integration.main import useFakeRackConf, useFakeIPMITool
-
-
-intervalRanges = {0: (0.01, 0.05), 0.85: (0.3, 0.6), 0.95: (2, 4)}
-rangesProbabilities = intervalRanges.keys()
-rangesProbabilities.sort()
 
 
 def informFakeConsumersManagerOfReboot(hostname):
@@ -33,18 +26,9 @@ def power(mode):
 def sol(subaction):
     if subaction != "activate":
         return
-    possibleOutputLines = ("Yo yo i'm a cool server",
-                           "This server has got swag.",
-                           "Wow this totally looks like a serial log of a linux server",
-                           "asdasd")
     while True:
-        withinBound = random.random()
-        chosenRangeProbability = \
-            [rangeProb for rangeProb in rangesProbabilities if rangeProb <= withinBound][-1]
-        chosenRange = intervalRanges[chosenRangeProbability]
-        interval = chosenRange[0] + random.random() * (chosenRange[1] - chosenRange[0])
-        time.sleep(interval)
-        print random.choice(possibleOutputLines)
+        time.sleep(0.05)
+        print "Wow this totally looks like a serial log of a linux server"
 
 
 def main(args):
