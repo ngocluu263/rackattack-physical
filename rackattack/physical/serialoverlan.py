@@ -99,6 +99,7 @@ class SerialOverLan(threading.Thread):
         "import os\n" \
         "import pty\n" \
         "import errno\n" \
+        "import time\n" \
         "\n" \
         "\n" \
         "def setTruncateRequested(*args):\n" \
@@ -111,6 +112,10 @@ class SerialOverLan(threading.Thread):
         "master, slave = pty.openpty()\n" \
         "popen = subprocess.Popen(sys.argv[1:], stdout=slave, stderr=subprocess.STDOUT)\n" \
         "os.close(slave)\n" \
+        "curTime = int(time.time())\n" \
+        "profilingOutputFilePath = os.path.join('/var/lib/rackattackphysical/profiling', sys.argv[5])\n" \
+        "profilingOutputFile = open(profilingOutputFilePath, 'w')\n" \
+        "nrWrites = 0\n" \
         "while True:\n" \
         "    try:\n" \
         "        data = os.read(master, 4096)\n" \
@@ -124,4 +129,11 @@ class SerialOverLan(threading.Thread):
         "        truncateRequested = False\n" \
         "        os.ftruncate(sys.stdout.fileno(), 0)\n" \
         "        os.lseek(sys.stdout.fileno(), 0, os.SEEK_SET)\n" \
-        "    os.write(sys.stdout.fileno(), data)\n"
+        "    os.write(sys.stdout.fileno(), data)\n" \
+        "    nrWrites += 1\n" \
+        "    before = curTime\n" \
+        "    curTime = int(time.time())\n" \
+        "    if curTime > before:\n" \
+        "       profilingOutputFile.write('%d:%d\\n' % (curTime, nrWrites))\n" \
+        "       profilingOutputFile.flush()\n" \
+        "       nrWrites = 0\n"
