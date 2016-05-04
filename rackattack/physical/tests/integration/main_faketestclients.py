@@ -121,7 +121,6 @@ class RackattackTestClients(threading.Thread):
                                                   pool=pool,
                                                   serverIDWildcard=serverIDWildcard)
         allocationInfo = self._generateAllocationInfo()
-        print requirements
         print "Trying to allocate %(nrHosts)s hosts from %(pool)s" % dict(nrHosts=len(requirements),
                                                                           pool=pool)
         allocation = None
