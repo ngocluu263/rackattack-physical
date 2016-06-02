@@ -20,10 +20,11 @@ STATES = Enum(["ONLINE", "OFFLINE", "DETACHED"])
 class Host:
     DEFAULT_POOL = "default"
     DEFAULT_TARGET_DEVICE = None
+    DEFAULT_TARGET_DEVICE_TYPE = None
     NR_TRUNCATION_CALLS_BEFORE_ACTUAL_TRUNCATION = 5
 
     def __init__(self, index, id, ipmiLogin, primaryMAC, secondaryMAC, topology, state, pool=None,
-                 targetDevice=None, NICBondings=None):
+                 targetDevice=None, NICBondings=None, targetDeviceType=None):
         self._index = index
         self._id = id
         self._ipmiLogin = ipmiLogin
@@ -41,6 +42,9 @@ class Host:
         if targetDevice is None:
             targetDevice = self.DEFAULT_TARGET_DEVICE
         self._targetDevice = targetDevice
+        if targetDeviceType is None:
+            targetDeviceType = self.DEFAULT_TARGET_DEVICE_TYPE
+        self._targetDeviceType = targetDeviceType
         self._NICBondings = None
         if NICBondings is None:
             NICBondings = list()
@@ -149,6 +153,15 @@ class Host:
             logging.info("Changing target device of %(hostID)s from %(old)s to %(new)s",
                          dict(hostID=self._id, old=self._targetDevice, new=targetDevice))
             self._targetDevice = targetDevice
+
+    def targetDeviceType(self):
+        return self._targetDeviceType
+
+    def setTargetDeviceType(self, targetDeviceType):
+        if targetDeviceType != self._targetDeviceType:
+            logging.info("Changing target device type of %(hostID)s from %(old)s to %(new)s",
+                         dict(hostID=self._id, old=self._targetDeviceType, new=targetDeviceType))
+            self._targetDeviceType = targetDeviceType
 
     def getNICBondings(self):
         return self._NICBondings
