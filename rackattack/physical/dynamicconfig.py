@@ -133,6 +133,8 @@ class DynamicConfig(threading.Thread):
         _host.setTargetDevice(targetDevice)
         NICBondings = hostData.get("NICBondings", list())
         _host.setNICBondings(NICBondings)
+        otherMACAddresses = hostData.get("otherMACAddresses", dict())
+        _host.setOtherMACAddresses(otherMACAddresses)
         targetDevice = hostData.get("targetDeviceType", host.Host.DEFAULT_TARGET_DEVICE_TYPE)
         _host.setTargetDeviceType(targetDevice)
 
