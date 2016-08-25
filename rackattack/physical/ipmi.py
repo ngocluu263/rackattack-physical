@@ -24,16 +24,18 @@ class IPMI:
 
     def powerCycle(self):
         self._powerCommand("off")
+        time.sleep(1)
         self._powerCommand("on")
 
     def softReset(self):
         self._powerCommand("soft")
 
-    def _powerCommand(self, command):
+    def _command(self, *args):
         NUMBER_OF_RETRIES = 10
         cmdLine = [
-            self.IPMITOOL_FILENAME, "-I", "lanplus", "power", command,
+            self.IPMITOOL_FILENAME, "-I", "lanplus",
             "-H", str(self._hostname), "-U", self._username, "-P", self._password]
+        cmdLine.extend(args)
         for i in xrange(NUMBER_OF_RETRIES - 1):
             try:
                 return subprocess.check_output(cmdLine, stderr=subprocess.STDOUT, close_fds=True)
@@ -44,3 +46,9 @@ class IPMI:
         except subprocess.CalledProcessError as e:
             logging.error("Output: %(output)s", dict(output=e.output))
             raise
+
+    def _powerCommand(self, command):
+        if command == "on":
+            self._command("chassis", "bootdev", "pxe")
+        time.sleep(1)
+        self._command("power", command)
