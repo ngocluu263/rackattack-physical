@@ -26,6 +26,7 @@ def main():
     with open(config.CONFIGURATION_FILE, "r") as f:
         conf = yaml.load(f.read())
     network.initialize_globals(conf)
+    config.ARE_IPMI_COMMANDS_SYNCHRONOUS = conf["ARE_IPMI_COMMANDS_SYNCHRONOUS"]
     reclamationserver = ReclamationServer(network.NETMASK,
                                           conf['OSMOSIS_SERVER_IP'],
                                           network.BOOTSERVER_IP_ADDRESS,

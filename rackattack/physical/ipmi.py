@@ -2,6 +2,7 @@ import subprocess
 import time
 import logging
 import multiprocessing.pool
+from rackattack.physical import config
 
 
 class IPMI:
@@ -15,6 +16,10 @@ class IPMI:
         self._password = password
         if IPMI._pool is None:
             IPMI._pool = multiprocessing.pool.ThreadPool(self._CONCURRENCY)
+        if config.ARE_IPMI_COMMANDS_SYNCHRONOUS:
+            self._commandsInterval = 10
+        else:
+            self._commandsInterval = 1
 
     def off(self):
         IPMI._pool.apply_async(self._powerCommand, args=("off",))
@@ -24,7 +29,6 @@ class IPMI:
 
     def powerCycle(self):
         self._powerCommand("off")
-        time.sleep(1)
         self._powerCommand("on")
 
     def softReset(self):
@@ -38,11 +42,15 @@ class IPMI:
         cmdLine.extend(args)
         for i in xrange(NUMBER_OF_RETRIES - 1):
             try:
-                return subprocess.check_output(cmdLine, stderr=subprocess.STDOUT, close_fds=True)
+                output = subprocess.check_output(cmdLine, stderr=subprocess.STDOUT, close_fds=True)
+                time.sleep(self._commandsInterval)
+                return output
             except:
                 time.sleep(0.1)
         try:
-            return subprocess.check_output(cmdLine, stderr=subprocess.STDOUT, close_fds=True)
+            output = subprocess.check_output(cmdLine, stderr=subprocess.STDOUT, close_fds=True)
+            time.sleep(self._commandsInterval)
+            return output
         except subprocess.CalledProcessError as e:
             logging.error("Output: %(output)s", dict(output=e.output))
             raise
@@ -50,5 +58,4 @@ class IPMI:
     def _powerCommand(self, command):
         if command == "on":
             self._command("chassis", "bootdev", "pxe")
-        time.sleep(1)
         self._command("power", command)

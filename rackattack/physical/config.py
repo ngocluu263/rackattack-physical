@@ -9,3 +9,4 @@ WITH_LOCAL_OBJECT_STORE = True
 RECLAMATION_REQUESTS_FIFO_PATH = "/usr/share/rackattack.physical/reclamation_requests_fifo"
 SOFT_RECLAMATION_FAILURE_MSG_FIFO_PATH = "/usr/share/rackattack.physical/soft_reclamations_failure_msg_fifo"
 EXAMPLE_CONF_YAML = "etc.rackattack-physical.conf.yaml.example"
+ARE_IPMI_COMMANDS_SYNCHRONOUS = False

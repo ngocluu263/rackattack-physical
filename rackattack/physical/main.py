@@ -50,6 +50,8 @@ with open(config.CONFIGURATION_FILE) as f:
     conf = yaml.load(f.read())
 network.initialize_globals(conf)
 hoststatemachine.HostStateMachine.ALLOW_CLEARING_OF_DISK = conf["ALLOW_CLEARING_OF_DISK"]
+config.ARE_IPMI_COMMANDS_SYNCHRONOUS = conf["ARE_IPMI_COMMANDS_SYNCHRONOUS"]
+logging.info("IPMI commands synchronous mode: %(syncMode)s", dict(syncMode=ipmi.ARE_IPMI_COMMANDS_SYNCHRONOUS))
 
 timer.TimersThread()
 withLocalObjectStore = config.WITH_LOCAL_OBJECT_STORE

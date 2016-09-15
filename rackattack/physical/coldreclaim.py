@@ -1,8 +1,7 @@
 import time
 import logging
 import multiprocessing.pool
-
-
+from rackattack.physical import config
 from rackattack.physical.ipmi import IPMI
 
 
@@ -15,6 +14,10 @@ class ColdReclaim:
         self._username = username
         self._password = password
         self._hardReset = hardReset
+        if config.ARE_IPMI_COMMANDS_SYNCHRONOUS:
+            self._commandsInterval = 1
+        else:
+            self._commandsInterval = 15
         if ColdReclaim._pool is None:
             ColdReclaim._pool = multiprocessing.pool.ThreadPool(self._CONCURRENCY)
         ColdReclaim._pool.apply_async(self._run)
@@ -23,7 +26,7 @@ class ColdReclaim:
         ipmi = IPMI(self._hostname, self._username, self._password)
         try:
             ipmi._powerCommand("off")
-            time.sleep(2)
+            time.sleep(self._commandsInterval)
             ipmi._powerCommand("on")
 #            if self._hardReset == "True":
 #                ipmi.powerCycle()

@@ -23,3 +23,5 @@ INNER_INTERFACE_NAME_IN_DOCKER_HOST: UNDEFINED
 # Only relevent when installing Rackattack inside a Docker container: The IP address associated with the
 # docker host in the network interface which is connected to the nodes.
 INNER_INTERFACE_IP_IN_DOCKER_HOST: UNDEFINED
+# This tells Rackattack wheather the BMC  handles IPMI commands synchronously. Some BMCs have an asynchronous feedback (the ipmitool command finishes but it takes a few seconds until it the command is actually executed). An invalid setting can cause Rackattack to mishandle servers, in case it is set to 'true', but the BMC actually works asynchronously; Servers might not reach the 'checked in' state. The preferred value is 'true', since it is a bit faster, but if you're not sure as to the nature of the BMCs, set it to 'false'.
+ARE_IPMI_COMMANDS_SYNCHRONOUS: false
