@@ -40,20 +40,16 @@ class IPMI:
             self.IPMITOOL_FILENAME, "-I", "lanplus",
             "-H", str(self._hostname), "-U", self._username, "-P", self._password]
         cmdLine.extend(args)
-        for i in xrange(NUMBER_OF_RETRIES - 1):
+        for i in xrange(NUMBER_OF_RETRIES):
             try:
                 output = subprocess.check_output(cmdLine, stderr=subprocess.STDOUT, close_fds=True)
                 time.sleep(self._commandsInterval)
                 return output
-            except:
+            except subprocess.CalledProcessError as e:
                 time.sleep(0.1)
-        try:
-            output = subprocess.check_output(cmdLine, stderr=subprocess.STDOUT, close_fds=True)
-            time.sleep(self._commandsInterval)
-            return output
-        except subprocess.CalledProcessError as e:
-            logging.error("Output: %(output)s", dict(output=e.output))
-            raise
+                if i == NUMBER_OF_RETRIES - 1:
+                    logging.error("Output: %(output)s", dict(output=e.output))
+                    raise
 
     def _powerCommand(self, command):
         if command == "on":
