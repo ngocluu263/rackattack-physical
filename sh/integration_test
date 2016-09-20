@@ -4,7 +4,7 @@ RACKATTACK_VAR_DIR="/var/lib/rackattackphysical"
 sudo mkdir -p $RACKATTACK_VAR_DIR
 
 # Validate that there are no suspicious processes that can interfere (or that this interferes with them)
-sudo kill -9 `ps aux | grep rackattack | awk '{print $2}'`
+sudo kill -9 `ps aux | grep rackattack | grep -v tail | awk '{print $2}'`
 sudo pkill -9 beam.smp
 
 # Cleanup
