@@ -9,11 +9,11 @@ class ColdReclaim:
     _CONCURRENCY = 8
     _pool = None
 
-    def __init__(self, hostname, username, password, hardReset):
+    def __init__(self, hostname, username, password, isHardReset):
         self._hostname = hostname
         self._username = username
         self._password = password
-        self._hardReset = hardReset
+        self._isHardReset = isHardReset
         if config.ARE_IPMI_COMMANDS_SYNCHRONOUS:
             self._commandsInterval = 1
         else:
@@ -28,7 +28,7 @@ class ColdReclaim:
             ipmi._powerCommand("off")
             time.sleep(self._commandsInterval)
             ipmi._powerCommand("on")
-#            if self._hardReset == "True":
+#            if self._isHardReset == "True":
 #                ipmi.powerCycle()
 #            else:
 #                ipmi.softReset()

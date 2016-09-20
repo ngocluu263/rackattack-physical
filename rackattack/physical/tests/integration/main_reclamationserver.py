@@ -13,39 +13,21 @@ fakeRebootRequestfd = None
 
 class FakeSoftReclaim(ORIG_SOFT_RECLAIM):
     def __init__(self,
-                 hostID,
-                 hostname,
-                 username,
-                 password,
-                 macAddress,
-                 targetDevice,
-                 isInauguratorActive,
-                 maxUptime,
                  inauguratorCommandLine,
                  softReclamationFailedMsgFifoWriteFd,
-                 inauguratorKernel,
-                 inauguratorInitRD):
-        self._hostID = hostID
-        hostname = "10.0.0.101"
-        username = "root"
-        password = "strato"
-        macAddress = hostID + "-primary-mac"
-        self._ipmiHostname = hostID + "-fake-ipmi"
+                 **kwargs):
+        self._hostID = kwargs["hostID"]
+        kwargs["hostname"] = "10.0.0.101"
+        kwargs["username"] = "root"
+        kwargs["password"] = "strato"
+        kwargs["macAddress"] = self._hostID + "-primary-mac"
+        self._ipmiHostname = self._hostID + "-fake-ipmi"
         assert hasattr(self, "_KEXEC_CMD")
         self._KEXEC_CMD = "echo"
         ORIG_SOFT_RECLAIM.__init__(self,
-                                   hostID,
-                                   hostname,
-                                   username,
-                                   password,
-                                   macAddress,
-                                   targetDevice,
-                                   isInauguratorActive,
-                                   maxUptime,
                                    inauguratorCommandLine,
                                    softReclamationFailedMsgFifoWriteFd,
-                                   inauguratorKernel,
-                                   inauguratorInitRD)
+                                   **kwargs)
 
     def run(self):
         logging.info("Faking kexec reset by physically restarting host %(id)s", dict(id=self._hostID))

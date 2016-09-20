@@ -8,7 +8,10 @@ class ReclaimHost(ReclaimHostSpooler):
     def _requestColdReclamationFromServer(self, host, hardReset):
         credentials = host.ipmiLoginCredentials()
         assert isinstance(hardReset, bool)
-        args = [credentials["hostname"], credentials["username"], credentials["password"], str(hardReset)]
+        args = dict(hostname=credentials["hostname"],
+                    username=credentials["username"],
+                    password=credentials["password"],
+                    isHardReset=str(hardReset))
         self._sendRequest("cold", args)
 
     def _handleColdReclamationRequest(self, host, hardReset):
