@@ -31,12 +31,16 @@ def sol(subaction):
         print "Wow this totally looks like a serial log of a linux server"
 
 
+def chassis(subaction):
+    pass
+
+
 def main(args):
     useFakeRackConf()
     useFakeIPMITool()
     if args.I != "lanplus":
         assert args.I is None
-    action = dict(power=power, sol=sol).get(args.action)
+    action = dict(power=power, sol=sol, chassis=chassis).get(args.action)
     action(args.subaction)
 
 
@@ -49,5 +53,6 @@ if __name__ == '__main__':
     parser.add_argument("-R", default=1, type=int)
     parser.add_argument("action", default=None, type=str)
     parser.add_argument("subaction", default=None, type=str)
+    parser.add_argument("subaction2", default=None, type=str, nargs="*")
     args = parser.parse_args()
     main(args)
