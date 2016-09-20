@@ -137,6 +137,9 @@ class DynamicConfig(threading.Thread):
         _host.setOtherMACAddresses(otherMACAddresses)
         targetDevice = hostData.get("targetDeviceType", host.Host.DEFAULT_TARGET_DEVICE_TYPE)
         _host.setTargetDeviceType(targetDevice)
+        serialPort = hostData.get("serialPort", 0)
+        if serialPort != _host.getSerialPort():
+            _host.setSerialPort(serialPort)
 
     def _normalizeStateCase(self, hostData):
         if "state" in hostData:

@@ -24,7 +24,8 @@ class Host:
     NR_TRUNCATION_CALLS_BEFORE_ACTUAL_TRUNCATION = 5
 
     def __init__(self, index, id, ipmiLogin, primaryMAC, secondaryMAC, topology, state, pool=None,
-                 targetDevice=None, NICBondings=None, targetDeviceType=None, otherMACAddresses=None):
+                 targetDevice=None, NICBondings=None, targetDeviceType=None, otherMACAddresses=None,
+                 serialPort=0):
         self._index = index
         self._id = id
         self._ipmiLogin = ipmiLogin
@@ -54,6 +55,7 @@ class Host:
             otherMACAddresses = dict()
         self.setOtherMACAddresses(otherMACAddresses)
         self._nrTruncationCalls = 0
+        self._serialPort = serialPort
 
     def index(self):
         return self._index
@@ -187,6 +189,15 @@ class Host:
 
     def getOtherMACAddresses(self):
         return self._otherMACAddresses
+
+    def getSerialPort(self):
+	return self._serialPort
+
+    def setSerialPort(self, serialPort):
+        assert isinstance(serialPort, int)
+        logging.info("Changing serial port of %(hostID)s from %(old)s to %(new)s",
+                     dict(hostID=self._id, old=self._serialPort, new=serialPort))
+        self._serialPort = serialPort
 
     @staticmethod
     def _doesSearchTermMatchWildcardPattern(searchTerm, wildcard):
