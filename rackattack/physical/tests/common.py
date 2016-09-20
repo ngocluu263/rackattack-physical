@@ -75,6 +75,9 @@ class Host:
     def getNICBondings(self):
         return ["fake list", "of MAC", "addresses"]
 
+    def getOtherMACAddresses(self):
+        return None
+
 
 class Hosts:
     def __init__(self):

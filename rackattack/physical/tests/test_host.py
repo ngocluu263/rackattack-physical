@@ -95,11 +95,12 @@ class Test(unittest.TestCase):
 
     def test_fulfillsWildcardSearchTermRequirement(self):
         requirement = dict(pool="thePool")
-        termsThatMatch = ["rack01-server49", "rack01-*", "*-server49", "*", "**", "rack*-server*", "*rack*"]
+        termsThatMatch = ["", "rack01-server49", "rack01-*", "*-server49", "*", "**", "rack*-server*",
+                          "*rack*"]
         for term in termsThatMatch:
             requirement["serverIDWildcard"] = term
             self.assertTrue(self.tested.fulfillsRequirement(requirement), term)
-        termsThatDontMatch = ["rack01-server20", "rack02-*", "*-server20", "", "rack*-client*", "foo*"]
+        termsThatDontMatch = ["rack01-server20", "rack02-*", "*-server20", "rack*-client*", "foo*"]
         for term in termsThatDontMatch:
             requirement["serverIDWildcard"] = term
             self.assertFalse(self.tested.fulfillsRequirement(requirement), term)
