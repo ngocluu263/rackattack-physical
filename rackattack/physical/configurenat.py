@@ -1,3 +1,4 @@
+import os
 import sys
 import yaml
 import logging
@@ -38,7 +39,13 @@ def writeRules(interface):
     runCmd(cmd, canFail=True)
 
 
+def enablePortForwarding(inteface):
+    confPath = os.path.join("/proc/sys/net/ipv4/conf/", interface, "forwarding")
+    with open(confPath, "w") as confFile:
+        confFile.write("1")
+
 def configureNat(interface):
+    enablePortForwarding(interface)
     deleteRules(interface)
     writeRules(interface)
 
