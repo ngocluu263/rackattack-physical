@@ -56,6 +56,7 @@ class Host:
         self.setOtherMACAddresses(otherMACAddresses)
         self._nrTruncationCalls = 0
         self._serialPort = serialPort
+        self._reasonForDestruction = None
 
     def index(self):
         return self._index
@@ -96,8 +97,10 @@ class Host:
             self._sol.stop()
             self._sol = None
 
-    def destroy(self):
+    def destroy(self, reason=None):
         logging.info("Host %(id)s destroyed", dict(id=self._id))
+        if reason is not None:
+            self._reasonForDestruction = reason
 
     def fulfillsRequirement(self, requirement):
         requestedPool = requirement.get("pool", self.DEFAULT_POOL)
@@ -204,3 +207,6 @@ class Host:
         regexPattern = ".*".join([re.escape(part) for part in wildcard.split("*")]) + "$"
         regex = re.compile(regexPattern)
         return regex.match(searchTerm) is not None
+
+    def getReasonForDestruction(self):
+        return self._reasonForDestruction
