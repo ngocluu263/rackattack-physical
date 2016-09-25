@@ -146,7 +146,8 @@ class IPCServer(baseipcserver.BaseIPCServer):
                      secondaryMACAddress=host.secondaryMACAddress(),
                      ipAddress=host.ipAddress(),
                      state="OFFLINE",
-                     pool=host.pool())
+                     pool=host.pool(),
+                     reasonForDestruction=host.getReasonForDestruction())
                 for host_id, host in self._dynamicConfig.getOfflineHosts().iteritems()]
 
     def _onlineHosts(self):
@@ -159,15 +160,12 @@ class IPCServer(baseipcserver.BaseIPCServer):
             6: "DESTROYED"}
         statesOfHostsThatHaveMachines = dict([(machine.hostImplementation().id(), machine.state())
                                              for machine in self._hosts.all()])
-        hosts = [dict(index=host.index(),
-                      id=hostID,
-                      primaryMACAddress=host.primaryMACAddress(),
-                      secondaryMACAddress=host.secondaryMACAddress(),
-                      ipAddress=host.ipAddress(),
-                      state=STATE[statesOfHostsThatHaveMachines.get(hostID, STATE_DESTROYED)],
-                      pool=host.pool())
-                 for hostID, host in self._dynamicConfig.getOnlineHosts().iteritems()]
-        for host in hosts:
-            reasonForDestruction = host.getReasonForDestruction()
-            if reasonForDestruction is not None:
-                host["reasonForDestruction"] = reasonForDestruction
+        return [dict(index=host.index(),
+                     id=hostID,
+                     primaryMACAddress=host.primaryMACAddress(),
+                     secondaryMACAddress=host.secondaryMACAddress(),
+                     ipAddress=host.ipAddress(),
+                     state=STATE[statesOfHostsThatHaveMachines.get(hostID, STATE_DESTROYED)],
+                     pool=host.pool(),
+                     reasonForDestruction=host.getReasonForDestruction())
+                for hostID, host in self._dynamicConfig.getOnlineHosts().iteritems()]
