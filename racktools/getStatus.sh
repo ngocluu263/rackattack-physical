@@ -1,0 +1,1 @@
+RACKATTACK_PROVIDER=tcp://rackattack-provider.dc1.strato:1014@@amqp://guest:guest@rackattack-provider.dc1.strato:1013@@http://rackattack-provider.dc1.strato:1016 UPSETO_JOIN_PYTHON_NAMES_SPACES=Yes PYTHONPATH=~/work/rackattack-api/py/ python getStatus.py
