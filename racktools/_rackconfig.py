@@ -12,12 +12,13 @@ import pprint
 from datetime import datetime
 import tempfile
 
-YAML = "/etc/rackattack.physical.rack.yaml"
-RACKATTACK_LOCK = "/tmp/rackattack.conf"
+YAML = "/etc/rackattack-physical/rack.yaml"
+RACKATTACK_CONFIG_FILE = "/etc/rackattack-physical/conf.yaml"
 
 BACKUP_GIT_REPO_URL = "http://github.com/Stratoscale/rootfs-rackattack-provider-bezeq"
-BACKUP_GIT_REPO_CONFIGU_FILE_PATH = "etc/rackattack.physical.rack.yaml"
+BACKUP_GIT_REPO_CONFIG_FILES_DIR = "etc"
 
+RACKATTACK_LOCK = "/tmp/rackattack.conf"
 SERVER_STATES = ['detached', 'offline', 'online']
 
 
@@ -63,7 +64,7 @@ class RackattackConfig(object):
                                                  datetime.now().strftime("%b-%d-%y-%H-%M-%S"),
                                                  confChangeType,
                                                  confChangeValue)
-        shutil.copyfile(self._yamlConfPath, yamlBackupPath)
+        # shutil.copyfile(self._yamlConfPath, yamlBackupPath)
         yaml.dump(self._yaml, open(self._yamlConfPath, 'w'))
 
     def reloadConf(self):
@@ -80,7 +81,7 @@ class RackattackConfig(object):
     def showServersInPool(self, pool):
         self._show("pool", pool)
 
-    def backup(self, gitrepo, path_inside_repo, args):
+    def backup(self, gitrepo, config_files_dir, args):
         print "Backing up the configuration file..."
         assert args.show is None or not args.show
         gitrepo_dir = tempfile.mkdtemp()
@@ -100,12 +101,18 @@ class RackattackConfig(object):
                     value = args.pool
                 else:
                     raise Exception("Cannot create a backup commit message; Unknown operation")
-                servers = ",".join(args.servers)
-                message = "Change %(prop)s of servers %(servers)s to %(value)s" % \
-                          dict(prop=prop, servers=servers, value=value)
-            dest_path = os.path.join(gitrepo_dir, path_inside_repo)
+                if len(args.servers) > 1:
+                    serversWord = "servers"
+                elif len(args.servers) == 1:
+                    serversWord = "server"
+                else:
+                    return
+                message = "Change %(prop)s of %(serversWord)s %(servers)s to %(value)s" % \
+                          dict(prop=prop, servers=",".join(args.servers), value=value, serversWord=serversWord)
+            dest_path = os.path.join(gitrepo_dir, config_files_dir)
             print "\tCopying configuration file to repository..."
-            shutil.copy(args.yaml, dest_path)
+            shutil.copy(args.yaml, os.path.join(dest_path, os.path.basename(args.yaml)))
+            shutil.copy(RACKATTACK_CONFIG_FILE, os.path.join(dest_path, os.path.basename(RACKATTACK_CONFIG_FILE)))
             print "\tValidating that a diff exists..."
             output = subprocess.check_output(["git", "status", "--porcelain"], stderr=subprocess.PIPE)
             if not output:
@@ -139,15 +146,15 @@ def main(args):
                 rackCfg.showServersInState(args.state)
             else:
                 rackCfg.updateState(args.servers, args.state)
-                rackCfg.backup(BACKUP_GIT_REPO_URL, BACKUP_GIT_REPO_CONFIGU_FILE_PATH, args)
+                rackCfg.backup(BACKUP_GIT_REPO_URL, BACKUP_GIT_REPO_CONFIG_FILES_DIR, args)
         elif args.pool:
             if listOnly:
                 rackCfg.showServersInPool(args.pool)
             else:
                 rackCfg.updatePool(args.servers, args.pool)
-                rackCfg.backup(BACKUP_GIT_REPO_URL, BACKUP_GIT_REPO_CONFIGU_FILE_PATH, args)
+                rackCfg.backup(BACKUP_GIT_REPO_URL, BACKUP_GIT_REPO_CONFIG_FILES_DIR, args)
         elif args.backup:
-            rackCfg.backup(BACKUP_GIT_REPO_URL, BACKUP_GIT_REPO_CONFIGU_FILE_PATH, args)
+            rackCfg.backup(BACKUP_GIT_REPO_URL, BACKUP_GIT_REPO_CONFIG_FILES_DIR, args)
         else:
             raise Exception("Unknown conf parameter")
         if not listOnly:
