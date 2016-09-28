@@ -185,9 +185,9 @@ class Host:
 
     def setOtherMACAddresses(self, otherMACAddresses):
         assert isinstance(otherMACAddresses, dict)
-        logging.info("Changing list of other MAC addresses of %(hostID)s from %(old)s to %(new)s",
-                     dict(hostID=self._id, old=self._otherMACAddresses, new=otherMACAddresses))
-
+        if otherMACAddresses != self._otherMACAddresses:
+            logging.info("Changing list of other MAC addresses of %(hostID)s from %(old)s to %(new)s",
+                         dict(hostID=self._id, old=self._otherMACAddresses, new=otherMACAddresses))
         self._otherMACAddresses = otherMACAddresses
 
     def getOtherMACAddresses(self):
@@ -198,8 +198,9 @@ class Host:
 
     def setSerialPort(self, serialPort):
         assert isinstance(serialPort, int)
-        logging.info("Changing serial port of %(hostID)s from %(old)s to %(new)s",
-                     dict(hostID=self._id, old=self._serialPort, new=serialPort))
+        if serialPort != self._serialPort:
+            logging.info("Changing serial port of %(hostID)s from %(old)s to %(new)s",
+                         dict(hostID=self._id, old=self._serialPort, new=serialPort))
         self._serialPort = serialPort
 
     @staticmethod
