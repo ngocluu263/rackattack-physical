@@ -44,6 +44,7 @@ def enablePortForwarding(inteface):
     with open(confPath, "w") as confFile:
         confFile.write("1")
 
+
 def configureNat(interface):
     enablePortForwarding(interface)
     deleteRules(interface)
