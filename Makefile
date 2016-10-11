@@ -33,12 +33,8 @@ build/rackattack.physical.reclamation.egg: rackattack/physical/main_reclamations
 	python -m upseto.packegg --entryPoint=$< --output=$@ --createDeps=$@.dep --compile_pyc --joinPythonNamespaces
 -include build/rackattack.physical.reclamation.egg.dep
 
-install_pika:
-	-sudo mkdir /usr/share/rackattack.physical
-	sudo cp pika-stable/pika-git-ref-6226dc0.egg /usr/share/rackattack.physical
-
 ifeq ($(HOST),local)
-install: validate_python_requirements install_pika build/rackattack.physical.egg build/rackattack.physical.reclamation.egg
+install: validate_python_requirements build/rackattack.physical.egg build/rackattack.physical.reclamation.egg
 	-sudo systemctl stop rackattack-physical.service
 	-sudo systemctl stop rackattack-physical-reclamation.service
 	-sudo mkdir /usr/share/rackattack.physical
@@ -63,7 +59,7 @@ install: run-rackattack-physical-reclamation-container run-rackattack-physical-r
 endif
 endif
 
-prepareForCleanBuild: install_pika
+prepareForCleanBuild:
 
 .PHONY: validate_python_requirements
 validate_python_requirements:

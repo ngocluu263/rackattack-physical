@@ -4,7 +4,7 @@ After=network.target
 
 [Service]
 Type=simple
-Environment='PYTHONPATH=/usr/share/rackattack.physical/rackattack.physical.egg' 'PIKA_EGG_PATH=/usr/share/rackattack.physical/pika-git-ref-6226dc0.egg'
+Environment='PYTHONPATH=/usr/share/rackattack.physical/rackattack.physical.egg'
 ExecStart=/usr/bin/python -m rackattack.physical.main
 [Install]
 WantedBy=multi-user.target

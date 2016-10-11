@@ -16,7 +16,7 @@ mkfifo ${FAKE_REBOOTS_PIPE_PATH}
 # Rackattack
 echo "Starting Rackattack"
 RACKATTACK_LOG_FILE="${RACKATTACK_VAR_DIR}/integration-test.rackattack.log"
-su -c "ulimit -Sn 2048"; FAKE_REBOOTS_PIPE_PATH="${FAKE_REBOOTS_PIPE_PATH}" PYTHONPATH=. PIKA_EGG_PATH=/usr/share/rackattack.physical/pika-git-ref-6226dc0.egg UPSETO_JOIN_PYTHON_NAMESPACES=Yes python rackattack/physical/tests/integration/main.py >& "${RACKATTACK_LOG_FILE}" &
+su -c "ulimit -Sn 2048"; FAKE_REBOOTS_PIPE_PATH="${FAKE_REBOOTS_PIPE_PATH}" PYTHONPATH=. UPSETO_JOIN_PYTHON_NAMESPACES=Yes python rackattack/physical/tests/integration/main.py >& "${RACKATTACK_LOG_FILE}" &
 echo "Log file for Rackattack: ${RACKATTACK_LOG_FILE}"
 
 echo "Starting Rackattack dashboard..."
@@ -25,7 +25,7 @@ sleep 3
 
 # Fake consumers server
 FAKE_CONSUMERS_SERVER_LOG_FILE="${RACKATTACK_VAR_DIR}/fake_consumers_server.log"
-FAKE_REBOOTS_PIPE_PATH="${FAKE_REBOOTS_PIPE_PATH}" UPSETO_JOIN_PYTHON_NAMESPACES=Yes PYTHONPATH=. PIKA_EGG_PATH=pika-stable/pika-git-ref-6226dc0.egg python rackattack/physical/tests/integration/main_fakehosts.py >& $FAKE_CONSUMERS_SERVER_LOG_FILE &
+FAKE_REBOOTS_PIPE_PATH="${FAKE_REBOOTS_PIPE_PATH}" UPSETO_JOIN_PYTHON_NAMESPACES=Yes PYTHONPATH=. python rackattack/physical/tests/integration/main_fakehosts.py >& $FAKE_CONSUMERS_SERVER_LOG_FILE &
 echo "Log file for the fake consumers server: ${FAKE_CONSUMERS_SERVER_LOG_FILE}"
 
 echo "Rackattack Reclamation server..."
@@ -35,4 +35,4 @@ echo "Log file for the reclamation server: ${RECLAMATION_SERVER_LOG_FILE}"
 
 echo "Starting fake test clients..."
 sleep 8
-PYTHONPATH=. RACKATTACK_PROVIDER=tcp://localhost:1014@@amqp://guest:guest@localhost:1013@@http://localhost:1016 UPSETO_JOIN_PYTHON_NAMESPACES=Yes PIKA_EGG_PATH=pika-stable/pika-git-ref-6226dc0.egg python rackattack/physical/tests/integration/main_faketestclients.py "${RECLAMATION_SERVER_LOG_FILE}"
+PYTHONPATH=. RACKATTACK_PROVIDER=tcp://localhost:1014@@amqp://guest:guest@localhost:1013@@http://localhost:1016 UPSETO_JOIN_PYTHON_NAMESPACES=Yes python rackattack/physical/tests/integration/main_faketestclients.py "${RECLAMATION_SERVER_LOG_FILE}"

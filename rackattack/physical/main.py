@@ -1,6 +1,5 @@
 import sys
 import logging
-from rackattack.physical import pikapatch
 from rackattack.physical import logconfig
 import argparse
 from rackattack.physical import config

@@ -1,6 +1,7 @@
 import os
 import yaml
 import json
+import pika
 import random
 import logging
 import threading
@@ -8,15 +9,10 @@ import functools
 
 from rackattack.physical.tests.integration import use_local_inaugurator
 import rackattack.physical.config
-import rackattack.physical.pikapatch
 from rackattack.common import hoststatemachine
 from inaugurator.server import config, pikapatchwakeupfromanotherthread
 from rackattack.physical.tests.integration.main import RACK_CONFIG_FILE_PATH, FAKE_REBOOTS_PIPE_NAME
-import pika
 
-assert "egg" in pika.__file__
-assert "build" not in pika.__file__
-assert "bdist" not in pika.__file__
 use_local_inaugurator.verify()
 
 

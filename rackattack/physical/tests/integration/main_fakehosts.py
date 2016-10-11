@@ -1,7 +1,7 @@
 import os
 import logging
 import threading
-from rackattack.physical import pikapatch, config
+from rackattack.physical import config
 from rackattack.physical.tests.integration import fakehosts
 from rackattack.physical.tests.integration.main import (useFakeRackConf, useFakeIPMITool,
                                                         useFakeGeneralConfiguration)

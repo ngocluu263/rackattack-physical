@@ -1,6 +1,5 @@
 import time
 import mock
-import pika
 from rackattack import api
 from rackattack.tcp import publish
 from rackattack.common import timer

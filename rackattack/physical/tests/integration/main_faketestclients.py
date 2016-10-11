@@ -4,14 +4,10 @@ import random
 import threading
 import traceback
 import subprocess
-from rackattack.physical import pikapatch
 from rackattack import clientfactory
 from rackattack.physical import config
 from rackattack.api import Requirement, AllocationInfo
 from rackattack.physical.tests.integration.main import useFakeGeneralConfiguration
-
-import pika
-assert "egg" in pika.__file__
 
 
 class RackattackTestClients(threading.Thread):

@@ -1,7 +1,6 @@
 import os
 import time
 import argparse
-from rackattack.physical import pikapatch
 from rackattack.physical.tests.integration.main import useFakeRackConf, useFakeIPMITool
 
 
