@@ -1,6 +1,6 @@
 #!/bin/bash
 
-RACKATTACK_VAR_DIR="/var/lib/rackattackphysical"
+RACKATTACK_VAR_DIR=`python -c "from rackattack.physical import config; print config.RUNTIME_VAR_DIR"`
 sudo mkdir -p $RACKATTACK_VAR_DIR
 
 # Validate that there are no suspicious processes that can interfere (or that this interferes with them)

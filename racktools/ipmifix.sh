@@ -1,6 +1,7 @@
 #!/bin/bash
 
-for server in `grep -R "Unable to establish IPMI v2" /var/lib/rackattackphysical/seriallogs | cut -d/ -f 6- | cut -d'-' -f  1-2` 
+RACKATTACK_VAR_DIR=`python -c "from rackattack.physical import config; print config.SERIAL_LOGS_DIRECTORY"`
+for server in `grep -R "Unable to establish IPMI v2" ${SERIAL_LOGS_DIRECTORY} | cut -d/ -f 6- | cut -d'-' -f  1-2` 
 do
 	echo ${server}
 	python /root/racktools/ipmi-fixer.py --server ${server}

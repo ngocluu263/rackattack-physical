@@ -1,4 +1,5 @@
-RACKATTACK_PHYSICAL_DOCKER_CIDFILE = /var/lib/rackattackphysical/cid
+RACKATTACK_VAR_DIR=`python -c "from rackattack.physical import config; print config.RUNTIME_VAR_DIR"`
+RACKATTACK_PHYSICAL_DOCKER_CIDFILE = ${RUNTIME_VAR_DIR}/cid
 UPSETO_REQUIREMENTS_FULFILLED = $(shell upseto checkRequirements 2> /dev/null; echo $$?)
 VERSION=$(shell git describe --tags --dirty)
 
@@ -139,9 +140,9 @@ ifneq ($(shell docker ps | grep -c "rackattack-physical:$(VERSION)" | xargs echo
 	exit 1
 endif
 	-rm "$(RACKATTACK_PHYSICAL_DOCKER_CIDFILE)"
-	docker run -d=true -v /etc/rackattack-physical:/etc/rackattack-physical -v /usr/share/rackattack.physical/reclamation_requests_fifo:/usr/share/rackattack.physical/reclamation_requests_fifo -v /usr/share/rackattack.physical/soft_reclamations_failure_msg_fifo:/usr/share/rackattack.physical/soft_reclamations_failure_msg_fifo -v /var/lib/rackattackphysical/:/var/lib/rackattackphysical/ -p 1013:1013 -p 1014:1014 -p 1015:1015 -p 1016:1016 -p 67:67/udp -p 69:69 -p 53:53/udp --cap-add NET_ADMIN --cidfile="$(RACKATTACK_PHYSICAL_DOCKER_CIDFILE)" "rackattack-physical:$(VERSION)"
+	docker run -d=true -v /etc/rackattack-physical:/etc/rackattack-physical -v /usr/share/rackattack.physical/reclamation_requests_fifo:/usr/share/rackattack.physical/reclamation_requests_fifo -v /usr/share/rackattack.physical/soft_reclamations_failure_msg_fifo:/usr/share/rackattack.physical/soft_reclamations_failure_msg_fifo -v ${RUNTIME_VAR_DIR}/:${RUNTIME_VAR_DIR}/ -p 1013:1013 -p 1014:1014 -p 1015:1015 -p 1016:1016 -p 67:67/udp -p 69:69 -p 53:53/udp --cap-add NET_ADMIN --cidfile="$(RACKATTACK_PHYSICAL_DOCKER_CIDFILE)" "rackattack-physical:$(VERSION)"
 	@echo "Setting up networking for the rackattack-physical container..."
-	@UPSETO_JOIN_PYTHON_NAMESPACES=Yes PYTHONPATH=. python rackattack/physical/setup_networking_for_docker_idempotently.py "`cat /var/lib/rackattackphysical/cid`" build/pipework
+	@UPSETO_JOIN_PYTHON_NAMESPACES=Yes PYTHONPATH=. python rackattack/physical/setup_networking_for_docker_idempotently.py "`cat ${RUNTIME_VAR_DIR}/cid`" build/pipework
 	@echo "Done."
 
 .PHONY: run-rackattack-physical-reclamation-docker-container
