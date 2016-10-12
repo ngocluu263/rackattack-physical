@@ -8,7 +8,7 @@ all: validate_requirements unittest build check_convention
 clean:
 	sudo rm -fr build
 
-unittest: validate_python_requirements
+unittest:
 	@UPSETO_JOIN_PYTHON_NAMESPACES=Yes PYTHONPATH=. python -m coverage run -m rackattack.physical.tests.runner
 	@python -m coverage report --show-missing --fail-under=75 --include=rackattack/* --omit="rackattack/physical/tests/*"
 
@@ -22,7 +22,7 @@ check_convention:
 check_before_commit: check_convention unittest
 
 .PHONY: build
-build: validate_requirements build/rackattack.physical.egg build/rackattack.physical.reclamation.egg
+build: build/rackattack.physical.egg build/rackattack.physical.reclamation.egg
 
 build/rackattack.physical.egg: rackattack/physical/main.py
 	-mkdir $(@D)
@@ -35,7 +35,7 @@ build/rackattack.physical.reclamation.egg: rackattack/physical/main_reclamations
 -include build/rackattack.physical.reclamation.egg.dep
 
 ifeq ($(HOST),local)
-install: validate_python_requirements build/rackattack.physical.egg build/rackattack.physical.reclamation.egg
+install: validate_requirements build/rackattack.physical.egg build/rackattack.physical.reclamation.egg
 	-sudo systemctl stop rackattack-physical.service
 	-sudo systemctl stop rackattack-physical-reclamation.service
 	-sudo mkdir /usr/share/rackattack.physical
