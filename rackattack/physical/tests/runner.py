@@ -1,5 +1,6 @@
 import os
 import logging
+import argparse
 import unittest
 import itertools
 import rackattack
@@ -24,12 +25,7 @@ def configureLogging(verbosity):
     logger.setLevel(logLevel)
 
 
-def importAllModulesToMakeThemAppearInCoverageReport():
-    blackList = ["rackattack.physical.logconfig",
-                 "rackattack.physical.main",
-                 "rackattack.physical.main_reclamationserver",
-                 "rackattack.physical.configurenat",
-                 "rackattack.physical.setup_networking_for_docker_idempotently"]
+def importAllModulesToMakeThemAppearInCoverageReport(blackList):
     dirLists = [[os.path.join(item[0], filename) for filename in item[2]] for item in os.walk("rackattack")]
     files = list(itertools.chain(*dirLists))
     pythonFiles = [_file for _file in files if _file.endswith(".py")]
@@ -42,8 +38,16 @@ def importAllModulesToMakeThemAppearInCoverageReport():
             module = module.split(".__init__")[0]
         __import__(module)
 
+
+def getArgs():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--blackList", nargs="*")
+    return parser.parse_args()
+
+
 if __name__ == "__main__":
-    importAllModulesToMakeThemAppearInCoverageReport()
+    args = getArgs()
+    importAllModulesToMakeThemAppearInCoverageReport(args.blackList)
     if "VERBOSITY" not in os.environ:
         maxVerbosity = max(logLevels.keys())
         print "Note: For different verbosity levels, run with VERBOSITY=(number from 0 to " \

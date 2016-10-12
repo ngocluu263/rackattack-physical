@@ -2,6 +2,11 @@ RACKATTACK_VAR_DIR=`python -c "from rackattack.physical import config; print con
 RACKATTACK_PHYSICAL_DOCKER_CIDFILE = ${RUNTIME_VAR_DIR}/cid
 UPSETO_REQUIREMENTS_FULFILLED = $(shell upseto checkRequirements 2> /dev/null; echo $$?)
 VERSION=$(shell git describe --tags --dirty)
+UT_BLACKLIST = rackattack.physical.logconfig \
+               rackattack.physical.main \
+               rackattack.physical.main_reclamationserver \
+               rackattack.physical.configurenat \
+               rackattack.physical.setup_networking_for_docker_idempotently \
 
 all: validate_requirements unittest build check_convention
 
@@ -9,7 +14,7 @@ clean:
 	sudo rm -fr build
 
 unittest:
-	@UPSETO_JOIN_PYTHON_NAMESPACES=Yes PYTHONPATH=. python -m coverage run -m rackattack.physical.tests.runner
+	@UPSETO_JOIN_PYTHON_NAMESPACES=Yes PYTHONPATH=. python -m coverage run -m rackattack.physical.tests.runner --blackList ${UT_BLACKLIST}
 	@python -m coverage report --show-missing --fail-under=75 --include=rackattack/* --omit="rackattack/physical/tests/*"
 
 .PHONY: integration_test
